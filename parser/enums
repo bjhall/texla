@@ -1,0 +1,55 @@
+-TokenKind int
+Keyword
+Identifier
+Integer
+Float
+Comma
+OpenCurly
+CloseCurly
+OpenParen
+CloseParen
+OpenBracket
+CloseBracket
+DoubleQuote
+GreaterThan
+LessThan
+Assign
+Equal
+Minus
+Plus
+Mult
+Div
+Comment
+RightArrow
+Whitespace
+StringLiteral
+NoToken
+Eof
+
+-NodeType int
+NoOpNodeType
+NumNodeType
+StringLiteralNodeType
+BinOpNodeType
+CompoundStatementNodeType
+StatementNodeType
+AssignNodeType
+VarNodeType
+FunctionNodeType
+FunctionCallNodeType
+ProgramNodeType
+ParameterNodeType
+ParameterListNodeType
+ReturnNodeType
+
+-Type int
+NoCoercion
+NoReturnType
+TypeUndetermined
+TypeInt
+TypeFloat
+TypeString
+
+-CoercionMode int
+CoercionModeDefault
+CoercionModeNumLiteral
