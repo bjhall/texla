@@ -92,6 +92,19 @@ func (p *Parser) addImport(name string) {
 	p.imports[name] = true
 }
 
+func (s *Scope) setVariableUsed(name string) error {
+	if symbol, exists := s.symbols[name]; exists {
+		symbol.used = true
+		s.symbols[name] = symbol
+		return nil
+	}
+	if s.parent == nil {
+		return fmt.Errorf("Variable not found: %q", name)
+	}
+	return s.parent.setVariableUsed(name)
+}
+
+
 func (p *Parser) validateVariable(name string) bool {
 	symbol, found := p.currentScope.lookupSymbol(name)
 
@@ -101,8 +114,8 @@ func (p *Parser) validateVariable(name string) bool {
 	}
 
 	// Annotate the variable as used
-	symbol.used = true
-	p.currentScope.symbols[name] = symbol // FIXME: There must be a cleaner way to change the used attribute?
+	p.currentScope.setVariableUsed(name)
+
 	return true
 }
 
