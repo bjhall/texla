@@ -24,6 +24,8 @@ func main() {
 	}
 
 	if DEBUG {
+		fmt.Println(os.Stderr, "CODE:", string(code[:]))
+
 		fmt.Println("TOKENS:")
 		for idx, token := range tokens {
 			fmt.Println(idx, token)

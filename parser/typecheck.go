@@ -136,7 +136,7 @@ func (tc *TypeChecker) traverse(node Node) {
 		}
 
 	default:
-		fmt.Println("TODO:", node.Type())
+		fmt.Println("TYPECHECKING TODO:", node.Type())
 		os.Exit(1)
 
 	}

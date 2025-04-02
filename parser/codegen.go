@@ -80,7 +80,7 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			panic("Unimplemented coercion")
 		}
 	default:
-			panic("Unimplemented coercion")
+		panic("Unimplemented coercion")
 	}
 }
 
@@ -274,7 +274,7 @@ func (g *Generator) codegenStatement(node Node) string {
 	case ReturnNodeType:
 		return g.codegenReturn(node.(*ReturnNode))
 	default:
-		fmt.Println("Unknown node in statement", node.Type())
+		fmt.Println("CODEGEN TODO: Unknown node in statement", node.Type())
 		panic("")
 	}
 }
@@ -292,7 +292,7 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 	case FunctionCallNodeType:
 		return g.codegenFunctionCall(node.(*FunctionCallNode), coercion)
 	default:
-		fmt.Println("Unknown node in expression", node.Type())
+		fmt.Println("CODEGEN TODO: Unknown node in expression", node.Type())
 		panic("")
 	}
 }
