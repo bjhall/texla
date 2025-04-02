@@ -174,6 +174,7 @@ func (g *Generator) codegenAssign(node *AssignNode) string {
 }
 
 func (g *Generator) codegenCompoundStatement(node *CompoundStatementNode) string {
+	prevScope := g.scope
 	g.scope = node.scope
 	var statements []string
 	g.indentLevel++
@@ -182,6 +183,8 @@ func (g *Generator) codegenCompoundStatement(node *CompoundStatementNode) string
 	}
 	statementsString := strings.Join(statements, "\n")
 	g.indentLevel--
+	g.scope = prevScope
+
 	return fmt.Sprintf("{\n%s\n%s", statementsString, g.indent("}"))
 }
 
