@@ -11,10 +11,14 @@ CloseParen
 OpenBracket
 CloseBracket
 DoubleQuote
-GreaterThan
-LessThan
-Assign
+Greater
+GreaterEqual
+Less
+LessEqual
 Equal
+Not
+NotEqual
+Assign
 Minus
 Plus
 Mult

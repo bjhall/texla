@@ -197,9 +197,15 @@ func (t *Tokenizer) nextToken() (Token, error) {
 	case ']':
 		return t.createTokenConsume(CloseBracket, 1), nil
 	case '>':
-		return t.createTokenConsume(GreaterThan, 1), nil
+		if t.peek(1) == '=' {
+			return t.createTokenConsume(GreaterEqual, 2), nil
+		}
+		return t.createTokenConsume(Greater, 1), nil
 	case '<':
-		return t.createTokenConsume(LessThan, 1), nil
+		if t.peek(1) == '=' {
+			return t.createTokenConsume(LessEqual, 2), nil
+		}
+		return t.createTokenConsume(Less, 1), nil
 	case '-':
 		if t.peek(1) == '>' {
 			return t.createTokenConsume(RightArrow, 2), nil
@@ -226,6 +232,11 @@ func (t *Tokenizer) nextToken() (Token, error) {
 			return t.createTokenConsume(Equal, 2), nil
 		}
 		return t.createTokenConsume(Assign, 1), nil
+	case '!':
+		if t.peek(1) == '=' {
+			return t.createTokenConsume(NotEqual, 2), nil
+		}
+		return t.createTokenConsume(Not, 1), nil
 	default:
 		return Token{}, fmt.Errorf("Unknown token: %s", strconv.QuoteRune(t.currentRune()))
 	}

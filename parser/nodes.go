@@ -121,6 +121,10 @@ func (n *BinOpNode) Type() NodeType {
 
 func (n *BinOpNode) Precedence() int {
 	switch n.op.kind {
+	case Equal, NotEqual:
+		return 2
+	case Greater, Less, GreaterEqual, LessEqual:
+		return 3
 	case Plus, Minus:
 		return 4
 	case Mult, Div:

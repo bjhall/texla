@@ -14,10 +14,14 @@ const (
 	OpenBracket
 	CloseBracket
 	DoubleQuote
-	GreaterThan
-	LessThan
-	Assign
+	Greater
+	GreaterEqual
+	Less
+	LessEqual
 	Equal
+	Not
+	NotEqual
+	Assign
 	Minus
 	Plus
 	Mult
@@ -45,10 +49,14 @@ func (s TokenKind) String() string {
 	case OpenBracket: return "OpenBracket"
 	case CloseBracket: return "CloseBracket"
 	case DoubleQuote: return "DoubleQuote"
-	case GreaterThan: return "GreaterThan"
-	case LessThan: return "LessThan"
-	case Assign: return "Assign"
+	case Greater: return "Greater"
+	case GreaterEqual: return "GreaterEqual"
+	case Less: return "Less"
+	case LessEqual: return "LessEqual"
 	case Equal: return "Equal"
+	case Not: return "Not"
+	case NotEqual: return "NotEqual"
+	case Assign: return "Assign"
 	case Minus: return "Minus"
 	case Plus: return "Plus"
 	case Mult: return "Mult"
