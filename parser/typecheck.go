@@ -42,6 +42,8 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 			return TypeFloat
 		}
 		return TypeInt
+	case UnaryOpNodeType:
+		return tc.typecheckExpr(node.(*UnaryOpNode).expr)
 	case VarNodeType:
 		varSymbol, found :=  tc.scope.lookupSymbol(node.(*VarNode).token.str)
 		if found {

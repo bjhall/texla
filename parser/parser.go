@@ -275,6 +275,14 @@ func (p *Parser) parsePrimary() (Node, error) {
 	case StringLiteral:
 		return &StringLiteralNode{token: p.consumeToken()}, nil
 
+	case Not:
+		op := p.consumeToken()
+		expr, err := p.parseExpr()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return &UnaryOpNode{op: op, expr:expr}, nil
+
 	default:
 		return &NoOpNode{}, fmt.Errorf("Unexpected primary token: %q", p.currentToken().str)
 	}

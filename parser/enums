@@ -33,8 +33,10 @@ Eof
 -NodeType int
 NoOpNodeType
 NumNodeType
+BoolNodeType
 StringLiteralNodeType
 BinOpNodeType
+UnaryOpNodeType
 CompoundStatementNodeType
 StatementNodeType
 AssignNodeType

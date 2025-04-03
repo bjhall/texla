@@ -51,6 +51,8 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			return fmt.Sprintf("float64(%s)", content)
 		case TypeString:
 			return fmt.Sprintf("strconv.Itoa(%s)", content)
+		case TypeBool:
+			return fmt.Sprintf("%s != 0", content)
 		default:
 			panic("Unimplemented coercion")
 		}
@@ -65,6 +67,8 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			}
 		case TypeString:
 			return fmt.Sprintf("strconv.FormatFloat(%s, 'f', -1, 64)", content)
+		case TypeBool:
+			return fmt.Sprintf("%s != 0", content)
 		default:
 			panic("Unimplemented coercion")
 		}
@@ -76,6 +80,8 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 		case TypeFloat:
 			g.addPreludeFunction("stringToFloat")
 			return fmt.Sprintf("stringToFloat(%s)", content)
+		case TypeBool:
+			return fmt.Sprintf("len(%s) > 0", content)
 		default:
 			panic("Unimplemented coercion")
 		}
@@ -114,6 +120,15 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	return g.coerce(varName, symbol.typ, coercion, CoercionModeDefault)
 }
 
+
+func (g *Generator) codegenUnaryOp(node *UnaryOpNode) string {
+	switch node.op.kind {
+	case Not:
+		return fmt.Sprintf("%s(%s)", node.op.str, g.codegenExpr(node.expr, TypeBool))
+	default:
+		panic("Codegen for unary op not implemeneted")
+	}
+}
 
 func (g *Generator) codegenBinOp(node *BinOpNode, coercion Type) string {
 	left := g.codegenWithParens(node.left, node, coercion)
@@ -269,9 +284,14 @@ func (g *Generator) codegenReturn(node *ReturnNode) string {
 }
 
 func (g *Generator) codegenIf(node *IfNode) string {
+	coerceType := node.compType
+	if node.comp.Type() == VarNodeType {
+		coerceType = TypeBool
+	}
+
 	return fmt.Sprintf(
 		"if %s %s",
-		g.codegenExpr(node.comp, node.compType),
+		g.codegenExpr(node.comp, coerceType),
 		g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
 	)
 }
@@ -298,6 +318,8 @@ func (g *Generator) codegenStatement(node Node) string {
 
 func (g *Generator) codegenExpr(node Node, coercion Type) string {
 	switch node.Type() {
+	case UnaryOpNodeType:
+		return g.codegenUnaryOp(node.(*UnaryOpNode))
 	case BinOpNodeType:
 		return g.codegenBinOp(node.(*BinOpNode), coercion)
 	case NumNodeType:

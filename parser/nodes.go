@@ -156,6 +156,32 @@ func (n *BinOpNode) Precedence() int {
 	}
 }
 
+// Unary operator node
+type UnaryOpNode struct {
+	Node
+	op     Token
+	expr   Node
+}
+
+func (n *UnaryOpNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation+ "UnaryOp", n.op.str)
+	n.expr.Print(level+1)
+}
+
+func (n *UnaryOpNode) Type() NodeType {
+	return UnaryOpNodeType
+}
+
+func (n *UnaryOpNode) Precedence() int {
+	switch n.op.kind {
+	case Not:
+		return 6
+	default:
+		panic("Precedence not implemented for unary operator")
+	}
+}
+
 
 // Assignment node
 type AssignNode struct {

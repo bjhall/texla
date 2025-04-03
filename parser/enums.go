@@ -77,8 +77,10 @@ type NodeType int
 const (
 	NoOpNodeType NodeType = iota
 	NumNodeType
+	BoolNodeType
 	StringLiteralNodeType
 	BinOpNodeType
+	UnaryOpNodeType
 	CompoundStatementNodeType
 	StatementNodeType
 	AssignNodeType
@@ -97,8 +99,10 @@ func (s NodeType) String() string {
 	switch s {
 	case NoOpNodeType: return "NoOp"
 	case NumNodeType: return "Num"
+	case BoolNodeType: return "Bool"
 	case StringLiteralNodeType: return "StringLiteral"
 	case BinOpNodeType: return "BinOp"
+	case UnaryOpNodeType: return "UnaryOp"
 	case CompoundStatementNodeType: return "CompoundStatement"
 	case StatementNodeType: return "Statement"
 	case AssignNodeType: return "Assign"
