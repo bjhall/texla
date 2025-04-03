@@ -59,7 +59,6 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		fmt.Println("UNREACHABLE: Trying to loop up type of non-existing function")
 		os.Exit(1)
 	default:
-		node.Print(1)
 		fmt.Println("TODO: Typechecking not implemented for", node.Type())
 		os.Exit(1)
 	}
