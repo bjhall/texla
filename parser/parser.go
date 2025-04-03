@@ -171,7 +171,67 @@ func (p *Parser) expectToken(kind TokenKind) (Token, error) {
 }
 
 
+
+func (p *Parser) parseExpr() (Node, error) {
+	node, err := p.parseComparison()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+	return node, nil
+}
+
+func (p *Parser) parseComparison() (Node, error) {
+	node, err := p.parseTerm()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	for p.currentToken().kind == Equal || p.currentToken().kind == NotEqual || p.currentToken().kind == Greater || p.currentToken().kind == GreaterEqual ||  p.currentToken().kind == Less ||  p.currentToken().kind == LessEqual {
+		opToken := p.consumeToken()
+		right, err := p.parseTerm()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		node = &BinOpNode{left: node, op: opToken, right: right}
+	}
+	return node, nil
+}
+
+func (p *Parser) parseTerm() (Node, error) {
+	node, err := p.parseFactor()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+	for p.currentToken().kind == Plus || p.currentToken().kind == Minus {
+		opToken := p.consumeToken()
+		right, err := p.parseFactor()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		node = &BinOpNode{left: node, op: opToken, right: right}
+	}
+	return node, nil
+}
+
+
 func (p *Parser) parseFactor() (Node, error) {
+	node, err := p.parsePrimary()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	for p.currentToken().kind == Mult || p.currentToken().kind == Div {
+		opToken := p.consumeToken()
+		right, err := p.parsePrimary()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		node = &BinOpNode{left: node, op: opToken, right: right}
+	}
+	return node, nil
+}
+
+func (p *Parser) parsePrimary() (Node, error) {
 	switch p.currentToken().kind {
 
 	case OpenParen:
@@ -210,38 +270,6 @@ func (p *Parser) parseFactor() (Node, error) {
 	}
 }
 
-func (p *Parser) parseTerm() (Node, error) {
-	node, err := p.parseFactor()
-	if err != nil {
-		return &NoOpNode{}, err
-	}
-	for p.currentToken().kind == Mult || p.currentToken().kind == Div {
-		opToken := p.consumeToken()
-		right, err := p.parseFactor()
-		if err != nil {
-			return &NoOpNode{}, err
-		}
-		node = &BinOpNode{left: node, op: opToken, right: right}
-	}
-	return node, nil
-}
-
-func (p *Parser) parseExpr() (Node, error) {
-	node, err := p.parseTerm()
-	if err != nil {
-		return &NoOpNode{}, err
-	}
-
-	for p.currentToken().kind == Plus || p.currentToken().kind == Minus {
-		opToken := p.consumeToken()
-		right, err := p.parseTerm()
-		if err != nil {
-			return &NoOpNode{}, err
-		}
-		node = &BinOpNode{left: node, op: opToken, right: right}
-	}
-	return node, nil
-}
 
 func (p *Parser) parseCompoundStatement(parameters *ParameterListNode, returnType Type) (Node, error) {
 
