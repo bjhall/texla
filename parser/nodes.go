@@ -60,6 +60,27 @@ func (n *NumNode) NumType() Type {
 	}
 }
 
+// Boolean literals
+type BoolNode struct {
+	Node
+	token Token
+	value bool
+}
+
+func (n *BoolNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation+ n.token.str)
+}
+
+func (n *BoolNode) Type() NodeType {
+	return BoolNodeType
+}
+
+func (n *BoolNode) Precedence() int {
+	return 0
+}
+
+
 // String literals
 type StringLiteralNode struct {
 	Node

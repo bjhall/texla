@@ -262,11 +262,21 @@ func (p *Parser) parsePrimary() (Node, error) {
 			return variable, nil
 		}
 
+	case Keyword:
+		switch keyword := p.currentToken().str; keyword {
+		case "true":
+			return &BoolNode{token: p.consumeToken(), value: true}, nil
+		case "false":
+			return &BoolNode{token: p.consumeToken(), value: false}, nil
+		default:
+			return &NoOpNode{}, fmt.Errorf("Unexpected keyword: %q", keyword)
+		}
+
 	case StringLiteral:
 		return &StringLiteralNode{token: p.consumeToken()}, nil
 
 	default:
-		panic("Invalid token, expected Num")
+		return &NoOpNode{}, fmt.Errorf("Unexpected primary token: %q", p.currentToken().str)
 	}
 }
 
@@ -546,6 +556,13 @@ func (p *Parser) parseStatement() (Node, error) {
 			return node, nil
 		case "if":
 			node, err := p.parseIfStatement()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return node, nil
+		case "true", "false":
+			fmt.Println("Parsing true or false", p.currentToken)
+			node, err := p.parsePrimary()
 			if err != nil {
 				return &NoOpNode{}, err
 			}

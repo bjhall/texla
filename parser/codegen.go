@@ -90,6 +90,10 @@ func (g *Generator) codegenNum(node *NumNode, coercion Type) string {
 	return g.coerce(node.token.str, node.NumType(), coercion, CoercionModeNumLiteral)
 }
 
+func (g *Generator) codegenBool(node *BoolNode) string {
+	// TODO: Should booleans ever coerce?
+	return node.token.str
+}
 
 func (g *Generator) codegenStringLiteral(node *StringLiteralNode, coercion Type) string {
 	return g.coerce("\""+node.token.str+"\"", TypeString, coercion, CoercionModeDefault)
@@ -298,6 +302,8 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 		return g.codegenBinOp(node.(*BinOpNode), coercion)
 	case NumNodeType:
 		return g.codegenNum(node.(*NumNode), coercion)
+	case BoolNodeType:
+		return g.codegenBool(node.(*BoolNode))
 	case StringLiteralNodeType:
 		return g.codegenStringLiteral(node.(*StringLiteralNode), coercion)
 	case VarNodeType:

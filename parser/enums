@@ -54,6 +54,7 @@ TypeUndetermined
 TypeInt
 TypeFloat
 TypeString
+TypeBool
 
 -CoercionMode int
 CoercionModeDefault

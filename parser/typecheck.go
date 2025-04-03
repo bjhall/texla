@@ -21,13 +21,14 @@ func (tc *TypeChecker) addImport(name string) {
 	tc.imports[name] = true
 }
 
-
 func (tc *TypeChecker) typecheckExpr(node Node) Type {
 	switch node.Type() {
 	case NumNodeType:
 		return node.(*NumNode).NumType()
 	case StringLiteralNodeType:
 		return TypeString
+	case BoolNodeType:
+		return TypeBool
 	case BinOpNodeType:
 		leftType := tc.typecheckExpr(node.(*BinOpNode).left)
 		rightType := tc.typecheckExpr(node.(*BinOpNode).right)

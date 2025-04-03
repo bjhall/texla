@@ -124,6 +124,7 @@ const (
 	TypeInt
 	TypeFloat
 	TypeString
+	TypeBool
 )
 
 
@@ -135,6 +136,7 @@ func (s Type) String() string {
 	case TypeInt: return "Int"
 	case TypeFloat: return "Float"
 	case TypeString: return "String"
+	case TypeBool: return "Bool"
 
 	default: return "???"
 	}
