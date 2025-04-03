@@ -80,6 +80,13 @@ func (tc *TypeChecker) traverse(node Node) {
 		for _, child := range node.(*CompoundStatementNode).children {
 			tc.traverse(child)
 		}
+		tc.scope = tc.scope.parent
+
+	case IfNodeType:
+		compType := tc.typecheckExpr(node.(*IfNode).comp)
+		node.(*IfNode).setCompType(compType)
+		// TODO: Ensure that comparison is a boolean value
+		tc.traverse(node.(*IfNode).body)
 
 	case AssignNodeType:
 		lhs := node.(*AssignNode).left

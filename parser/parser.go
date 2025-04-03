@@ -484,6 +484,25 @@ func (p *Parser) parseReturn() (Node, error) {
 	return &ReturnNode{expr: expr}, nil
 }
 
+func (p *Parser) parseIfStatement() (Node, error) {
+	_, err := p.expectToken(Keyword) // if
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	comp, err := p.parseComparison()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	body, err := p.parseCompoundStatement(nil, NoReturnType)
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	return &IfNode{comp: comp, body: body}, nil
+}
+
 func (p *Parser) parseStatement() (Node, error) {
 	switch p.currentToken().kind {
 
@@ -521,6 +540,12 @@ func (p *Parser) parseStatement() (Node, error) {
 			return node, nil
 		case "return":
 			node, err := p.parseReturn()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return node, nil
+		case "if":
+			node, err := p.parseIfStatement()
 			if err != nil {
 				return &NoOpNode{}, err
 			}

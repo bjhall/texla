@@ -264,6 +264,14 @@ func (g *Generator) codegenReturn(node *ReturnNode) string {
 	return fmt.Sprintf("return %s", g.codegenExpr(node.expr, expectedReturnType))
 }
 
+func (g *Generator) codegenIf(node *IfNode) string {
+	return fmt.Sprintf(
+		"if %s %s",
+		g.codegenExpr(node.comp, node.compType),
+		g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
+	)
+}
+
 func (g *Generator) codegenStatement(node Node) string {
 	switch node.Type() {
 	case AssignNodeType:
@@ -276,6 +284,8 @@ func (g *Generator) codegenStatement(node Node) string {
 		return g.codegenFunctionCall(node.(*FunctionCallNode), NoCoercion)
 	case ReturnNodeType:
 		return g.codegenReturn(node.(*ReturnNode))
+	case IfNodeType:
+		return g.codegenIf(node.(*IfNode))
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in statement", node.Type())
 		panic("")

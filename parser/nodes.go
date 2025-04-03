@@ -339,3 +339,31 @@ func (n *ReturnNode) Type() NodeType {
 func (n *ReturnNode) Precedence() int {
 	return 100
 }
+
+
+// If node
+type IfNode struct {
+	Node
+	comp     Node
+	body     Node
+	compType Type
+}
+
+func (n *IfNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "If")
+	n.comp.Print(level+1)
+	n.body.Print(level+1)
+}
+
+func (n *IfNode) setCompType(typ Type) {
+	n.compType = typ
+}
+
+func (n *IfNode) Type() NodeType {
+	return IfNodeType
+}
+
+func (n *IfNode) Precedence() int {
+	return 1000
+}

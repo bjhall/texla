@@ -45,6 +45,7 @@ ProgramNodeType
 ParameterNodeType
 ParameterListNodeType
 ReturnNodeType
+IfNodeType
 
 -Type int
 NoCoercion

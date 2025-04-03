@@ -89,6 +89,7 @@ const (
 	ParameterNodeType
 	ParameterListNodeType
 	ReturnNodeType
+	IfNodeType
 )
 
 
@@ -108,6 +109,7 @@ func (s NodeType) String() string {
 	case ParameterNodeType: return "Parameter"
 	case ParameterListNodeType: return "ParameterList"
 	case ReturnNodeType: return "Return"
+	case IfNodeType: return "If"
 
 	default: return "???"
 	}
