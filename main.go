@@ -67,14 +67,15 @@ func main() {
 	}
 
 	// Write go code to a file
-	err = os.WriteFile("a.go", []byte(transpiledCode), 0644)
+	err = os.WriteFile("/tmp/a.go", []byte(transpiledCode), 0644)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	defer os.Remove("/tmp/a.go")
 
 	var outbuf, errbuf bytes.Buffer
-	cmd := exec.Command("go", "build", "-o", "a",  "a.go")
+	cmd := exec.Command("go", "build", "-o", "/tmp/a",  "/tmp/a.go")
     cmd.Stdout = &outbuf
     cmd.Stderr = &errbuf
 
@@ -89,7 +90,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cmd = exec.Command("./a")
+	cmd = exec.Command("/tmp/a")
     cmd.Stdout = &outbuf
     cmd.Stderr = &errbuf
 	err = cmd.Run()
