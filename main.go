@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"flag"
 	"bytes"
 	"os"
 	"os/exec"
@@ -10,12 +11,16 @@ import (
 
 func main() {
 
-	code, err := os.ReadFile(os.Args[1])
+	debugFlag := flag.Bool("debug", false, "Print debug information")
+	DEBUG := *debugFlag
+
+	flag.Parse()
+	inFiles := flag.Args()
+	code, err := os.ReadFile(inFiles[0])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "I/O ERROR: Could not read input file %q", os.Args[1])
 		os.Exit(1)
 	}
-	DEBUG := false
 
 	tokens, err := parser.Tokenize(string(code)+"\n")
 	if err != nil {
