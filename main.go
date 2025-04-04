@@ -12,9 +12,10 @@ import (
 func main() {
 
 	debugFlag := flag.Bool("debug", false, "Print debug information")
+	flag.Parse()
+
 	DEBUG := *debugFlag
 
-	flag.Parse()
 	inFiles := flag.Args()
 	code, err := os.ReadFile(inFiles[0])
 	if err != nil {
