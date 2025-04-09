@@ -77,7 +77,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		if found {
 			return funcSymbol.typ
 		}
-		fmt.Println("UNREACHABLE: Trying to loop up type of non-existing function")
+		fmt.Println("UNREACHABLE: Trying to look up type of non-existing function")
 		os.Exit(1)
 	default:
 		fmt.Println("TODO: Typechecking not implemented for", node.Type())
@@ -124,6 +124,8 @@ func (tc *TypeChecker) traverse(node Node) {
 			panic("TODO: Variable reassignment not implemented")
 		}
 
+		tc.traverse(rhs)
+
 	case ReturnNodeType:
 		node.(*ReturnNode).setType(tc.typecheckExpr(node.(*ReturnNode).expr))
 
@@ -136,6 +138,9 @@ func (tc *TypeChecker) traverse(node Node) {
 		if !found {
 			if functionName == "print" {
 				// TODO: HANDLE BUILTINS
+				for _, arg := range node.(*FunctionCallNode).arguments {
+					tc.traverse(arg.(*ArgumentNode).expr)
+				}
 				return
 			} else {
 				tc.error(fmt.Sprintf("No function named %q exists in current scope", functionName))
@@ -149,21 +154,53 @@ func (tc *TypeChecker) traverse(node Node) {
 		}
 
 		// Check if the right number of arguments was provided
+		// TODO: This check has to be adapted when optional arguments are added
 		numArguments := len(node.(*FunctionCallNode).arguments)
 		if numArguments != len(symbol.parameterTypes) {
 			tc.error(fmt.Sprintf("Wrong number of arguments to %s, expected %d, got %d", functionName, len(symbol.parameterTypes), numArguments))
 		}
 
 
-		// Infer types of function call argumemnts
-		for i, argument := range node.(*FunctionCallNode).arguments {
+		paramsSeen := map[string]bool{}
+		for i, paramName := range symbol.parameterOrder {
 			expectedType := symbol.parameterTypes[i]
-			givenType := tc.typecheckExpr(argument)
-			if givenType == TypeFloat && expectedType == TypeInt && argument.Type() == NumNodeType {
-				tc.addImport("math")
+			var givenType Type
+			var argIdx int
+			found := false
+			for j, n := range node.(*FunctionCallNode).arguments {
+				arg := n.(*ArgumentNode)
+				if (arg.named && arg.paramName == paramName) || (!arg.named && arg.order == i) {
+					paramsSeen[paramName] = true
+					argIdx = j
+					givenType = tc.typecheckExpr(arg.expr)
+					found = true
+					break
+				}
 			}
-			node.(*FunctionCallNode).argumentTypes = append(node.(*FunctionCallNode).argumentTypes, givenType)
+			if !found {
+				// TODO: Implement default arguments. This needs be changed to accomodate that
+				tc.error(fmt.Sprintf("Value missing for argument %q (%s) of function %q", paramName, expectedType, functionName))
+				return
+			}
+
+			node.(*FunctionCallNode).arguments[argIdx].(*ArgumentNode).typ = givenType
+			node.(*FunctionCallNode).appendArgumentOrder(argIdx)
+			tc.traverse(node.(*FunctionCallNode).arguments[argIdx])
 		}
+	case ArgumentNodeType:
+		tc.traverse(node.(*ArgumentNode).expr)
+
+	case BinOpNodeType:
+		tc.traverse(node.(*BinOpNode).left)
+		tc.traverse(node.(*BinOpNode).right)
+
+	case SliceLiteralNodeType:
+		for _, el := range node.(*SliceLiteralNode).elements {
+			tc.traverse(el)
+		}
+
+	case StringLiteralNodeType, NumNodeType, BoolNodeType, VarNodeType:
+		return
 
 	default:
 		fmt.Println("TYPECHECKING TODO:", node.Type())
@@ -187,6 +224,6 @@ func CheckTypes(root Node) (Node, error) {
 		return root, fmt.Errorf(strings.Join(typeChecker.errors, "\n"))
 	}
 
-	
+
 	return root, nil
 }

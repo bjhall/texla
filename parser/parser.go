@@ -10,6 +10,7 @@ type Symbol struct {
 	used           bool
 	category       SymbolCategory
 	parameterTypes []Type
+	parameterOrder []string
 }
 
 func (v *Symbol) setUsed() {
@@ -43,7 +44,7 @@ func newScope(parent *Scope, parameters *ParameterListNode, returnType Type) *Sc
 		for _, param := range parameters.parameters {
 			name := param.(*ParameterNode).name
 			typ := param.(*ParameterNode).typ
-			symbols[name] = Symbol{typ, name, false, VariableSymbol, []Type{}}
+			symbols[name] = Symbol{typ, name, false, VariableSymbol, []Type{}, []string{}}
 		}
 	}
 
@@ -69,11 +70,11 @@ func (s *Scope) lookupSymbol(name string) (Symbol, bool) {
 	return s.parent.lookupSymbol(name)
 }
 
-func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, parameterTypes []Type) bool {
+func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, parameterTypes []Type, parameterOrder []string) bool {
 	if _, exists := s.symbols[name]; exists {
 		return false
 	}
-	s.symbols[name] = Symbol{typ, name, false, category, parameterTypes} // FIXME: Don't hardcode Type
+	s.symbols[name] = Symbol{typ, name, false, category, parameterTypes, parameterOrder}
 	return true
 }
 
@@ -121,15 +122,17 @@ func (p *Parser) validateVariable(name string) bool {
 
 
 func (p *Parser) createVariableInCurrentScope(name string, typ Type) bool {
-	return p.currentScope.createSymbol(name, VariableSymbol, typ, []Type{})
+	return p.currentScope.createSymbol(name, VariableSymbol, typ, []Type{}, []string{})
 }
 
 func (p *Parser) createFunctionInCurrentScope(name string, parameterList *ParameterListNode, returnType Type) bool {
 	var parameterTypes []Type
+	var parameterOrder []string
 	for _, param := range parameterList.parameters {
 		parameterTypes = append(parameterTypes, param.(*ParameterNode).typ)
+		parameterOrder = append(parameterOrder, param.(*ParameterNode).name)
 	}
-	return p.currentScope.createSymbol(name, FunctionSymbol, returnType, parameterTypes)
+	return p.currentScope.createSymbol(name, FunctionSymbol, returnType, parameterTypes, parameterOrder)
 }
 
 func (p *Parser) unusedVariables() []string {
@@ -475,12 +478,33 @@ func (p *Parser) parseArgumentList() ([]Node, error) {
 		return arguments, err
 	}
 
+	namedArgumentSeen := false
+	orderedArgumentCount := 0
 	for p.currentToken().kind != CloseParen {
-		argument, err := p.parseExpr()
+
+		paramName := ""
+
+		// Check if named argument
+		if p.currentToken().kind == Identifier && p.peek(1).kind == Assign {
+			paramName = p.consumeToken().str
+			p.consumeToken() // =
+			namedArgumentSeen = true
+		} else if namedArgumentSeen {
+			return arguments, fmt.Errorf("Named argument cannot be followed by unnamed argument in list of arguments")
+		}
+
+		// Parse the actual argument
+		argumentExpr, err := p.parseExpr()
 		if err != nil {
 			return arguments, err
 		}
-		arguments = append(arguments, argument)
+
+		if paramName != "" { // Named argument
+			arguments = append(arguments, &ArgumentNode{expr: argumentExpr, named: true, paramName: paramName})
+		} else { // Ordered argument
+			arguments = append(arguments, &ArgumentNode{expr: argumentExpr, named: false, order: orderedArgumentCount})
+			orderedArgumentCount++
+		}
 		switch p.currentToken().kind {
 		case Comma:
 			p.consumeToken()
@@ -646,7 +670,7 @@ func (p *Parser) parseVar(checkIfDeclared bool) (Node, error) {
 
 	if checkIfDeclared {
 		if isDeclared := p.validateVariable(token.str); !isDeclared {
-			return &NoOpNode{}, fmt.Errorf("Use of non-declared variable: %q", token.str)
+			return &NoOpNode{}, fmt.Errorf("Use of non-declared variable: %q %d:%d", token.str, token.line, token.column)
 		}
 	}
 	return &VarNode{token: token}, nil

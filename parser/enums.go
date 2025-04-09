@@ -93,6 +93,7 @@ const (
 	ReturnNodeType
 	IfNodeType
 	SliceLiteralNodeType
+	ArgumentNodeType
 )
 
 
@@ -116,6 +117,7 @@ func (s NodeType) String() string {
 	case ReturnNodeType: return "Return"
 	case IfNodeType: return "If"
 	case SliceLiteralNodeType: return "SliceLiteral"
+	case ArgumentNodeType: return "Argument"
 
 	default: return "???"
 	}

@@ -49,6 +49,7 @@ ParameterListNodeType
 ReturnNodeType
 IfNodeType
 SliceLiteralNodeType
+ArgumentNodeType
 
 -Type int
 TypeUndetermined

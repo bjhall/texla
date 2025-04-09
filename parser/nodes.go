@@ -261,23 +261,55 @@ func (n *FunctionNode) Precedence() int {
 	return 0
 }
 
+// Argument
+type ArgumentNode struct {
+	Node
+	expr      Node
+	paramName string
+	order     int
+	named     bool
+	typ       Type
+}
+
+func (n *ArgumentNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation+ "Argument", "named:", n.named, "paramName:", n.paramName, "order:", n.order, "type:", n.typ)
+	n.expr.Print(level+1)
+}
+
+func (n *ArgumentNode) Type() NodeType {
+	return ArgumentNodeType
+}
+
+func (n *ArgumentNode) Precedence() int {
+	return 7
+}
+
 
 // Function call
 type FunctionCallNode struct {
 	Node
 	name          string
 	arguments     []Node
-	argumentTypes []Type
+	argumentOrder []int
 }
 
 func (n *FunctionCallNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation+ "FunctionCall", n.name)
-	for _, arg := range n.arguments {
-		arg.Print(level+1)
+	if len(n.arguments) == 0 {
+		return
 	}
-	for i, typ := range n.argumentTypes {
-		fmt.Println(indentation+"    Type:",i,typ)
+	if len(n.argumentOrder) == 0 {
+		fmt.Println(indentation+ "Unordered arguments:")
+		for _, arg := range n.arguments {
+			arg.Print(level+1)
+		}
+	} else {
+		fmt.Println(indentation+ "Ordered arguments:")
+		for _, idx := range n.argumentOrder {
+			n.arguments[idx].Print(level+1)
+		}
 	}
 }
 
@@ -287,6 +319,10 @@ func (n *FunctionCallNode) Type() NodeType {
 
 func (n *FunctionCallNode) Precedence() int {
 	return 7
+}
+
+func (n *FunctionCallNode) appendArgumentOrder(idx int) {
+	n.argumentOrder = append(n.argumentOrder, idx)
 }
 
 

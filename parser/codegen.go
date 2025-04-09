@@ -275,13 +275,13 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 
 	if node.name == "print" {
 		for _, argument := range node.arguments {
-			argumentStrings = append(argumentStrings, g.codegenExpr(argument, NoCoercion))
+			argumentStrings = append(argumentStrings, g.codegenExpr(argument.(*ArgumentNode).expr, NoCoercion))
 		}
 	} else {
-		for i, argument := range node.arguments {
-			parameterType := symbol.parameterTypes[i]
-			//argumentStrings = append(argumentStrings, convertedArguments[i])
-			argumentStrings = append(argumentStrings, g.codegenExpr(argument, parameterType))
+		for i, parameterType := range symbol.parameterTypes {
+			argIdx := node.argumentOrder[i]
+			argument := node.arguments[argIdx].(*ArgumentNode)
+			argumentStrings = append(argumentStrings, g.codegenExpr(argument.expr, parameterType))
 		}
 	}
 	functionCall := fmt.Sprintf("%s(%s)", functionName, strings.Join(argumentStrings, ", "))
