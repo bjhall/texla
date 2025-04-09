@@ -92,6 +92,7 @@ const (
 	ParameterListNodeType
 	ReturnNodeType
 	IfNodeType
+	SliceLiteralNodeType
 )
 
 
@@ -114,6 +115,7 @@ func (s NodeType) String() string {
 	case ParameterListNodeType: return "ParameterList"
 	case ReturnNodeType: return "Return"
 	case IfNodeType: return "If"
+	case SliceLiteralNodeType: return "SliceLiteral"
 
 	default: return "???"
 	}
@@ -129,6 +131,7 @@ const (
 	TypeFloat
 	TypeString
 	TypeBool
+	TypeSlice
 )
 
 
@@ -141,6 +144,7 @@ func (s Type) String() string {
 	case TypeFloat: return "Float"
 	case TypeString: return "String"
 	case TypeBool: return "Bool"
+	case TypeSlice: return "Slice"
 
 	default: return "???"
 	}

@@ -29,6 +29,27 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		return TypeString
 	case BoolNodeType:
 		return TypeBool
+	case SliceLiteralNodeType:
+		typeCoercionPrecedence := map[Type]int{TypeFloat: 3, TypeString: 2, TypeInt: 1}
+
+		var coercionType Type
+		var highestPrecedence int
+		for _, elem := range node.(*SliceLiteralNode).elements {
+			typ := tc.typecheckExpr(elem)
+			precedence, found := typeCoercionPrecedence[typ]
+			if !found {
+				tc.error(fmt.Sprintf("Type %s not allowed in slice literal", typ))
+				continue
+			}
+			if precedence > highestPrecedence {
+				highestPrecedence = precedence
+				coercionType = typ
+			}
+		}
+
+		node.(*SliceLiteralNode).elementType = coercionType
+		return TypeSlice
+
 	case BinOpNodeType:
 		leftType := tc.typecheckExpr(node.(*BinOpNode).left)
 		rightType := tc.typecheckExpr(node.(*BinOpNode).right)

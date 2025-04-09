@@ -283,11 +283,53 @@ func (p *Parser) parsePrimary() (Node, error) {
 		}
 		return &UnaryOpNode{op: op, expr:expr}, nil
 
+	case OpenBracket:
+		slice, err := p.parseSliceLiteral()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return slice, nil
+
 	default:
-		return &NoOpNode{}, fmt.Errorf("Unexpected primary token: %q", p.currentToken().str)
+		return &NoOpNode{}, fmt.Errorf("Unexpected token: %q", p.currentToken().str)
 	}
 }
 
+func (p *Parser) parseSliceLiteral() (Node, error) {
+	_, err := p.expectToken(OpenBracket)
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	// TODO: Parsing a comma separated list of expression should probably be extracted to a function
+	var elements []Node
+	for {
+		expr, err := p.parseExpr()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		elements = append(elements, expr)
+		if p.currentToken().kind == CloseBracket || p.currentToken().kind == Eof {
+			break
+		}
+		_, err = p.expectToken(Comma)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+
+		// Allow slice literal to end with comma
+		if p.currentToken().kind == CloseBracket {
+			break
+		}
+	}
+
+	_, err = p.expectToken(CloseBracket)
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	return &SliceLiteralNode{elements:elements}, nil
+}
 
 func (p *Parser) parseCompoundStatement(parameters *ParameterListNode, returnType Type) (Node, error) {
 

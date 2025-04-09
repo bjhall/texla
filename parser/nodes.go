@@ -414,3 +414,28 @@ func (n *IfNode) Type() NodeType {
 func (n *IfNode) Precedence() int {
 	return 1000
 }
+
+
+// SLice literal node
+type SliceLiteralNode struct {
+	Node
+	elements    []Node
+	elementType Type
+}
+
+func (n *SliceLiteralNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Slice literal,", n.elementType)
+	for i, e := range n.elements {
+		fmt.Println(indentation + "    " + "Element", i)
+		e.Print(level+1)
+	}
+}
+
+func (n *SliceLiteralNode) Type() NodeType {
+	return SliceLiteralNodeType
+}
+
+func (n *SliceLiteralNode) Precedence() int {
+	return 1000
+}

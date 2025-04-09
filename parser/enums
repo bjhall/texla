@@ -48,6 +48,7 @@ ParameterNodeType
 ParameterListNodeType
 ReturnNodeType
 IfNodeType
+SliceLiteralNodeType
 
 -Type int
 TypeUndetermined
@@ -57,6 +58,7 @@ TypeInt
 TypeFloat
 TypeString
 TypeBool
+TypeSlice
 
 -CoercionMode int
 CoercionModeDefault

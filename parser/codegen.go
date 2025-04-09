@@ -121,6 +121,15 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	return g.coerce(varName, symbol.typ, coercion, CoercionModeDefault)
 }
 
+func (g *Generator) codegenSliceLiteral(node *SliceLiteralNode, coercion Type) string {
+
+	elements := []string{}
+	for _, elem := range node.elements {
+		elements = append(elements, g.codegenExpr(elem, node.elementType))
+	}
+
+	return fmt.Sprintf("[]%s{%s}", g.codegenType(node.elementType), strings.Join(elements, ","))
+}
 
 func (g *Generator) codegenUnaryOp(node *UnaryOpNode) string {
 	switch node.op.kind {
@@ -333,6 +342,8 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 		return g.codegenVar(node.(*VarNode), coercion)
 	case FunctionCallNodeType:
 		return g.codegenFunctionCall(node.(*FunctionCallNode), coercion)
+	case SliceLiteralNodeType:
+		return g.codegenSliceLiteral(node.(*SliceLiteralNode), coercion)
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in expression", node.Type())
 		panic("")
