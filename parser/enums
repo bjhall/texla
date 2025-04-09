@@ -50,9 +50,9 @@ ReturnNodeType
 IfNodeType
 
 -Type int
+TypeUndetermined
 NoCoercion
 NoReturnType
-TypeUndetermined
 TypeInt
 TypeFloat
 TypeString

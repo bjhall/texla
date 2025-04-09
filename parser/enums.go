@@ -122,9 +122,9 @@ func (s NodeType) String() string {
 
 type Type int
 const (
-	NoCoercion Type = iota
+	TypeUndetermined Type = iota
+	NoCoercion
 	NoReturnType
-	TypeUndetermined
 	TypeInt
 	TypeFloat
 	TypeString
@@ -134,9 +134,9 @@ const (
 
 func (s Type) String() string {
 	switch s {
+	case TypeUndetermined: return "Undetermined"
 	case NoCoercion: return "NoCoercion"
 	case NoReturnType: return "NoReturn"
-	case TypeUndetermined: return "Undetermined"
 	case TypeInt: return "Int"
 	case TypeFloat: return "Float"
 	case TypeString: return "String"

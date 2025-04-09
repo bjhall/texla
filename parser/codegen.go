@@ -266,7 +266,7 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 
 	if node.name == "print" {
 		for _, argument := range node.arguments {
-			argumentStrings = append(argumentStrings, g.codegenExpr(argument, symbol.typ))
+			argumentStrings = append(argumentStrings, g.codegenExpr(argument, NoCoercion))
 		}
 	} else {
 		for i, argument := range node.arguments {
