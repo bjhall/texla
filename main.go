@@ -56,6 +56,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	if DEBUG {
+		fmt.Println("\nTYPE CHECKED AST:")
+		ast.Print(0)
+		fmt.Println()
+	}
+
 	transpiledCode, err := parser.GenerateCode(typed_ast)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
