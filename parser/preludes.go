@@ -24,6 +24,8 @@ func stringToInt(s string) int {
     return i
 }
 `
+	case "intToString":
+		return ""
 	default:
 		panic("Unknown prelude")
 
@@ -34,6 +36,8 @@ func preludeImports(name string) []string {
 	switch name {
 	case "stringToInt", "stringToFloat":
 		return []string{"fmt", "strconv", "os"}
+	case "intToString":
+		return []string{"strconv"}
 	default:
 		panic("Unknown prelude")
 	}

@@ -50,6 +50,7 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 		case TypeFloat:
 			return fmt.Sprintf("float64(%s)", content)
 		case TypeString:
+			g.addPreludeFunction("intToString")
 			return fmt.Sprintf("strconv.Itoa(%s)", content)
 		case TypeBool:
 			return fmt.Sprintf("%s != 0", content)
