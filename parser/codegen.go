@@ -225,6 +225,8 @@ func (g *Generator) codegenType(typ Type) string {
 		return "float64"
 	case TypeString:
 		return "string"
+	case TypeBool:
+		return "bool"
 	default:
 		panic("UNIMPLEMENTED TYPE") // FIXME
 	}

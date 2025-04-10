@@ -374,6 +374,8 @@ func (p *Parser) parseType() (Type, error) {
 		return TypeFloat, nil
 	case "str":
 		return TypeString, nil
+	case "bool":
+		return TypeBool, nil
 	default:
 		return TypeUndetermined, fmt.Errorf("Unknown type: %q", typeToken.str)
 	}
