@@ -612,7 +612,23 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	return &IfNode{comp: comp, body: body}, nil
+	if p.currentToken().kind == Keyword && p.currentToken().str == "else" {
+		p.consumeToken() // else
+
+		var elseBody Node
+		// else if
+		if p.currentToken().kind == Keyword && p.currentToken().str == "if" {
+			elseBody, err = p.parseIfStatement()
+		} else { // just else
+			elseBody, err = p.parseCompoundStatement(nil, NoReturnType)
+		}
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return &IfNode{comp: comp, body: body, elseBody: elseBody}, nil
+	}
+
+	return &IfNode{comp: comp, body: body, elseBody: &NoOpNode{}}, nil
 }
 
 func (p *Parser) parseStatement() (Node, error) {

@@ -320,10 +320,19 @@ func (g *Generator) codegenIf(node *IfNode) string {
 		coerceType = TypeBool
 	}
 
+	var elseCode string
+	switch node.elseBody.Type() {
+	case CompoundStatementNodeType:
+		elseCode = " else " + g.codegenCompoundStatement(node.elseBody.(*CompoundStatementNode))
+	case IfNodeType:
+		elseCode = " else " + g.codegenIf(node.elseBody.(*IfNode))
+	}
+
 	return fmt.Sprintf(
-		"if %s %s",
+		"if %s %s%s",
 		g.codegenExpr(node.comp, coerceType),
 		g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
+		elseCode,
 	)
 }
 

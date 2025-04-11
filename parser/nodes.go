@@ -431,6 +431,7 @@ type IfNode struct {
 	Node
 	comp     Node
 	body     Node
+	elseBody Node
 	compType Type
 }
 
@@ -439,6 +440,10 @@ func (n *IfNode) Print(level int) {
 	fmt.Println(indentation + "If")
 	n.comp.Print(level+1)
 	n.body.Print(level+1)
+	if n.elseBody.Type() != NoOpNodeType {
+		fmt.Println(indentation + "Else")
+		n.elseBody.Print(level+1)
+	}
 }
 
 func (n *IfNode) setCompType(typ Type) {
