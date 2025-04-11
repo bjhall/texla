@@ -9,8 +9,9 @@ type Symbol struct {
 	name           string
 	used           bool
 	category       SymbolCategory
-	parameterTypes []Type
-	parameterOrder []string
+	//parameterTypes []Type
+	//parameterOrder []string
+	paramsNode     *ParameterListNode
 }
 
 func (v *Symbol) setUsed() {
@@ -44,7 +45,7 @@ func newScope(parent *Scope, parameters *ParameterListNode, returnType Type) *Sc
 		for _, param := range parameters.parameters {
 			name := param.(*ParameterNode).name
 			typ := param.(*ParameterNode).typ
-			symbols[name] = Symbol{typ, name, false, VariableSymbol, []Type{}, []string{}}
+			symbols[name] = Symbol{typ, name, false, VariableSymbol, &ParameterListNode{}}
 		}
 	}
 
@@ -70,11 +71,11 @@ func (s *Scope) lookupSymbol(name string) (Symbol, bool) {
 	return s.parent.lookupSymbol(name)
 }
 
-func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, parameterTypes []Type, parameterOrder []string) bool {
+func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, paramsNode *ParameterListNode) bool {
 	if _, exists := s.symbols[name]; exists {
 		return false
 	}
-	s.symbols[name] = Symbol{typ, name, false, category, parameterTypes, parameterOrder}
+	s.symbols[name] = Symbol{typ, name, false, category, paramsNode}
 	return true
 }
 
@@ -122,17 +123,11 @@ func (p *Parser) validateVariable(name string) bool {
 
 
 func (p *Parser) createVariableInCurrentScope(name string, typ Type) bool {
-	return p.currentScope.createSymbol(name, VariableSymbol, typ, []Type{}, []string{})
+	return p.currentScope.createSymbol(name, VariableSymbol, typ, &ParameterListNode{})
 }
 
-func (p *Parser) createFunctionInCurrentScope(name string, parameterList *ParameterListNode, returnType Type) bool {
-	var parameterTypes []Type
-	var parameterOrder []string
-	for _, param := range parameterList.parameters {
-		parameterTypes = append(parameterTypes, param.(*ParameterNode).typ)
-		parameterOrder = append(parameterOrder, param.(*ParameterNode).name)
-	}
-	return p.currentScope.createSymbol(name, FunctionSymbol, returnType, parameterTypes, parameterOrder)
+func (p *Parser) createFunctionInCurrentScope(name string, paramsNode *ParameterListNode, returnType Type) bool {
+	return p.currentScope.createSymbol(name, FunctionSymbol, returnType, paramsNode)
 }
 
 func (p *Parser) unusedVariables() []string {
@@ -381,6 +376,25 @@ func (p *Parser) parseType() (Type, error) {
 	}
 }
 
+func literalTokenType(tok Token) (Type, error) {
+	switch tok.kind {
+	case Integer:
+		return TypeInt, nil
+	case Float:
+		return TypeFloat, nil
+	case StringLiteral:
+		return TypeString, nil
+	case Keyword:
+		if tok.str == "true" || tok.str == "false" {
+			return TypeBool, nil
+		}
+		return TypeUndetermined, fmt.Errorf("Token is not literal %q", tok.kind)
+	default:
+		fmt.Println(tok)
+		return TypeUndetermined, fmt.Errorf("Token is not literal %q", tok.kind)
+	}
+}
+
 func (p *Parser) parseParameter() (Node, error) {
 	name, err := p.expectToken(Identifier)
 	if err != nil {
@@ -389,6 +403,18 @@ func (p *Parser) parseParameter() (Node, error) {
 	typ, err := p.parseType()
 	if err != nil {
 		return &NoOpNode{}, err
+	}
+	if p.currentToken().kind == Assign {
+		p.consumeToken()
+		defaultToken := p.consumeToken()
+		literalType, err := literalTokenType(defaultToken)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		if typ == literalType {
+			return &ParameterNode{name: name.str, typ: typ, hasDefault: true, defaultValue: defaultToken.str}, nil
+		}
+		return &NoOpNode{}, fmt.Errorf("Default argument has wrong type")
 	}
 	return &ParameterNode{name: name.str, typ: typ}, nil
 }
@@ -637,7 +663,6 @@ func (p *Parser) parseStatement() (Node, error) {
 			}
 			return node, nil
 		case "true", "false":
-			fmt.Println("Parsing true or false", p.currentToken)
 			node, err := p.parsePrimary()
 			if err != nil {
 				return &NoOpNode{}, err

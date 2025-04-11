@@ -357,13 +357,15 @@ func (n *ProgramNode) addImport(importName string) {
 // Parameter node
 type ParameterNode struct {
 	Node
-	name string
-	typ  Type
+	name         string
+	typ          Type
+	hasDefault   bool
+	defaultValue string
 }
 
 func (n *ParameterNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "Parameter", n.name, n.typ)
+	fmt.Println(indentation+ "Parameter", n.name, n.typ, "HasDefault:", n.hasDefault, "Default value:", n.defaultValue)
 }
 
 func (n *ParameterNode) Type() NodeType {

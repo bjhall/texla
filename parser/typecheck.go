@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const ArgNotProvided = -1
+
 type TypeChecker struct {
 	scope       *Scope
 	errors      []string
@@ -153,24 +155,15 @@ func (tc *TypeChecker) traverse(node Node) {
 			tc.error(fmt.Sprintf("%q is not a function", functionName))
 		}
 
-		// Check if the right number of arguments was provided
-		// TODO: This check has to be adapted when optional arguments are added
-		numArguments := len(node.(*FunctionCallNode).arguments)
-		if numArguments != len(symbol.parameterTypes) {
-			tc.error(fmt.Sprintf("Wrong number of arguments to %s, expected %d, got %d", functionName, len(symbol.parameterTypes), numArguments))
-		}
-
-
-		paramsSeen := map[string]bool{}
-		for i, paramName := range symbol.parameterOrder {
-			expectedType := symbol.parameterTypes[i]
+		// Validate and typecheck arguments
+		for i, p := range symbol.paramsNode.parameters {
+			param := p.(*ParameterNode)
 			var givenType Type
 			var argIdx int
 			found := false
 			for j, n := range node.(*FunctionCallNode).arguments {
 				arg := n.(*ArgumentNode)
-				if (arg.named && arg.paramName == paramName) || (!arg.named && arg.order == i) {
-					paramsSeen[paramName] = true
+				if (arg.named && arg.paramName == param.name) || (!arg.named && arg.order == i) {
 					argIdx = j
 					givenType = tc.typecheckExpr(arg.expr)
 					found = true
@@ -178,14 +171,16 @@ func (tc *TypeChecker) traverse(node Node) {
 				}
 			}
 			if !found {
-				// TODO: Implement default arguments. This needs be changed to accomodate that
-				tc.error(fmt.Sprintf("Value missing for argument %q (%s) of function %q", paramName, expectedType, functionName))
-				return
+				if !param.hasDefault {
+					tc.error(fmt.Sprintf("Value missing for argument %q (%s) of function %q", param.name, param.typ, functionName))
+					return
+				}
+				node.(*FunctionCallNode).appendArgumentOrder(ArgNotProvided)
+			} else {
+				node.(*FunctionCallNode).arguments[argIdx].(*ArgumentNode).typ = givenType
+				node.(*FunctionCallNode).appendArgumentOrder(argIdx)
+				tc.traverse(node.(*FunctionCallNode).arguments[argIdx])
 			}
-
-			node.(*FunctionCallNode).arguments[argIdx].(*ArgumentNode).typ = givenType
-			node.(*FunctionCallNode).appendArgumentOrder(argIdx)
-			tc.traverse(node.(*FunctionCallNode).arguments[argIdx])
 		}
 	case ArgumentNodeType:
 		tc.traverse(node.(*ArgumentNode).expr)

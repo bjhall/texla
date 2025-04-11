@@ -106,6 +106,17 @@ func (g *Generator) codegenStringLiteral(node *StringLiteralNode, coercion Type)
 	return g.coerce("\""+node.token.str+"\"", TypeString, coercion, CoercionModeDefault)
 }
 
+func literalToStr(value string, typ Type) string {
+	switch typ {
+	case TypeInt, TypeFloat, TypeBool:
+		return value
+	case TypeString:
+		return fmt.Sprintf("\"%s\"", value)
+	default:
+		panic("Type not supported")
+	}
+}
+
 
 func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	varName := node.token.str
@@ -261,7 +272,6 @@ func (g *Generator) codegenFunction(node *FunctionNode) string {
 }
 
 func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) string {
-
 	var functionName string
 	var symbol Symbol
 	var argumentStrings []string
@@ -280,10 +290,19 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 			argumentStrings = append(argumentStrings, g.codegenExpr(argument.(*ArgumentNode).expr, NoCoercion))
 		}
 	} else {
-		for i, parameterType := range symbol.parameterTypes {
-			argIdx := node.argumentOrder[i]
-			argument := node.arguments[argIdx].(*ArgumentNode)
-			argumentStrings = append(argumentStrings, g.codegenExpr(argument.expr, parameterType))
+		for i, p := range symbol.paramsNode.parameters {
+			param := p.(*ParameterNode)
+			if i < len(node.argumentOrder) && node.argumentOrder[i] != ArgNotProvided {
+				argIdx := node.argumentOrder[i]
+				argument := node.arguments[argIdx].(*ArgumentNode)
+				argumentStrings = append(argumentStrings, g.codegenExpr(argument.expr, param.typ))
+			} else {
+				if param.hasDefault {
+					argumentStrings = append(argumentStrings, literalToStr(param.defaultValue, param.typ))
+				} else {
+					g.error(fmt.Sprintf("Argument missing for parameter %q in function call to %q", param.name, functionName))
+				}
+			}
 		}
 	}
 	functionCall := fmt.Sprintf("%s(%s)", functionName, strings.Join(argumentStrings, ", "))
