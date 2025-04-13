@@ -1,1 +1,38 @@
 package parser
+
+type Type interface {
+	String() string
+}
+
+type TypeInt struct{}
+func (t TypeInt) String() string { return "int" }
+
+type TypeFloat struct{}
+func (t TypeFloat) String() string { return "float" }
+
+type TypeString struct{}
+func (t TypeString) String() string { return "str" }
+
+type TypeBool struct{}
+func (t TypeBool) String() string { return "bool" }
+
+type TypeUndetermined struct{}
+func (t TypeUndetermined) String() string { return "Undetermined" }
+
+type NoCoercion struct{}
+func (t NoCoercion) String() string { return "NoCoercion" }
+
+type NoReturnType struct{}
+func (t NoReturnType) String() string { return "NoReturnType" }
+
+
+type TypeSlice struct{
+	ElementType Type
+}
+func (t TypeSlice) String() string { return "[]" + t.ElementType.String() }
+
+//type MapType struct {
+//	KeyType   Type
+//	ValueType Type
+//}
+//func (t MapType) String() string { return "map[" + t.KeyType.String() + "]" + t.ValueType.String() }

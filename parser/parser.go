@@ -358,38 +358,38 @@ func (p *Parser) parseCompoundStatement(parameters *ParameterListNode, returnTyp
 func (p *Parser) parseType() (Type, error) {
 	typeToken, err := p.expectToken(Identifier)
 	if err != nil {
-		return TypeUndetermined, err
+		return TypeUndetermined{}, err
 	}
 	switch typeToken.str {
 	case "int":
-		return TypeInt, nil
+		return TypeInt{}, nil
 	case "float":
-		return TypeFloat, nil
+		return TypeFloat{}, nil
 	case "str":
-		return TypeString, nil
+		return TypeString{}, nil
 	case "bool":
-		return TypeBool, nil
+		return TypeBool{}, nil
 	default:
-		return TypeUndetermined, fmt.Errorf("Unknown type: %q", typeToken.str)
+		return TypeUndetermined{}, fmt.Errorf("Unknown type: %q", typeToken.str)
 	}
 }
 
 func literalTokenType(tok Token) (Type, error) {
 	switch tok.kind {
 	case Integer:
-		return TypeInt, nil
+		return TypeInt{}, nil
 	case Float:
-		return TypeFloat, nil
+		return TypeFloat{}, nil
 	case StringLiteral:
-		return TypeString, nil
+		return TypeString{}, nil
 	case Keyword:
 		if tok.str == "true" || tok.str == "false" {
-			return TypeBool, nil
+			return TypeBool{}, nil
 		}
-		return TypeUndetermined, fmt.Errorf("Token is not literal %q", tok.kind)
+		return TypeUndetermined{}, fmt.Errorf("Token is not literal %q", tok.kind)
 	default:
 		fmt.Println(tok)
-		return TypeUndetermined, fmt.Errorf("Token is not literal %q", tok.kind)
+		return TypeUndetermined{}, fmt.Errorf("Token is not literal %q", tok.kind)
 	}
 }
 
@@ -440,10 +440,10 @@ func (p *Parser) parseParameterList() (Node, error) {
 func (p *Parser) parseReturnType() (Type, error) {
 	typ, err := p.parseType()
 	if err != nil {
-		return TypeUndetermined, err
+		return TypeUndetermined{}, err
 	}
 	if p.currentToken().kind != OpenCurly {
-		return TypeUndetermined, fmt.Errorf("Expected `{` after return type declaration")
+		return TypeUndetermined{}, fmt.Errorf("Expected `{` after return type declaration")
 	}
 	return typ, nil
 
@@ -474,7 +474,7 @@ func (p *Parser) parseFunction() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	returnType := NoReturnType
+	var returnType Type // := NoReturnType{}
 	if p.currentToken().kind == RightArrow {
 		p.consumeToken()
 		returnType, err = p.parseReturnType()
@@ -605,7 +605,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	body, err := p.parseCompoundStatement(nil, NoReturnType)
+	body, err := p.parseCompoundStatement(nil, NoReturnType{})
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -618,7 +618,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		if p.currentToken().kind == Keyword && p.currentToken().str == "if" {
 			elseBody, err = p.parseIfStatement()
 		} else { // just else
-			elseBody, err = p.parseCompoundStatement(nil, NoReturnType)
+			elseBody, err = p.parseCompoundStatement(nil, NoReturnType{})
 		}
 		if err != nil {
 			return &NoOpNode{}, err
@@ -687,7 +687,7 @@ func (p *Parser) parseStatement() (Node, error) {
 		}
 
 	case OpenCurly:
-		node, err := p.parseCompoundStatement(nil, NoReturnType)
+		node, err := p.parseCompoundStatement(nil, NoReturnType{})
 		if err != nil {
 			return &NoOpNode{}, err
 		}
@@ -734,7 +734,7 @@ func (p *Parser) parseAssign() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
-	isNew := p.createVariableInCurrentScope(left.(*VarNode).token.str, TypeUndetermined)
+	isNew := p.createVariableInCurrentScope(left.(*VarNode).token.str, TypeUndetermined{})
 	token, err := p.expectToken(Assign)
 	if err != nil {
 		return &NoOpNode{}, err
@@ -747,7 +747,7 @@ func (p *Parser) parseAssign() (Node, error) {
 }
 
 func Parse(tokens []Token) (Node, error) {
-	rootScope := newScope(nil, nil, NoReturnType)
+	rootScope := newScope(nil, nil, NoReturnType{})
 	parser := Parser{tokens, 0, 0, rootScope, make(map[string]bool)}
 
 	var functions []Node

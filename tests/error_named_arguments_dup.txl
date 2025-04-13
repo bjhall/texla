@@ -1,4 +1,4 @@
-/// ERR = Value missing for argument "double" (Int) of function "test"
+/// ERR = Value missing for argument "double" (int) of function "test"
 fn test(name str, double int, half float) {
    print("Name:", name, "| Double:", double*2, "| Half:", half/2)
 }

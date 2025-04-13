@@ -1,4 +1,4 @@
-/// ERR = Value missing for argument "b" (Int) of function "add"
+/// ERR = Value missing for argument "b" (int) of function "add"
 
 fn add(a int, b int) {
     print(a+b)

@@ -52,9 +52,9 @@ func (n *NumNode) Precedence() int {
 func (n *NumNode) NumType() Type {
 	switch n.token.kind {
 	case Integer:
-		return TypeInt
+		return TypeInt{}
 	case Float:
-		return TypeFloat
+		return TypeFloat{}
 	default:
 		panic("UNREACHABLE")
 	}

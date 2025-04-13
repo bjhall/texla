@@ -126,35 +126,6 @@ func (s NodeType) String() string {
 }
 
 
-type Type int
-const (
-	TypeUndetermined Type = iota
-	NoCoercion
-	NoReturnType
-	TypeInt
-	TypeFloat
-	TypeString
-	TypeBool
-	TypeSlice
-)
-
-
-func (s Type) String() string {
-	switch s {
-	case TypeUndetermined: return "Undetermined"
-	case NoCoercion: return "NoCoercion"
-	case NoReturnType: return "NoReturn"
-	case TypeInt: return "Int"
-	case TypeFloat: return "Float"
-	case TypeString: return "String"
-	case TypeBool: return "Bool"
-	case TypeSlice: return "Slice"
-
-	default: return "???"
-	}
-}
-
-
 type CoercionMode int
 const (
 	CoercionModeDefault CoercionMode = iota

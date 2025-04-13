@@ -52,16 +52,6 @@ SliceLiteralNodeType
 ArgumentNodeType
 IndexedVarNodeType
 
--Type int
-TypeUndetermined
-NoCoercion
-NoReturnType
-TypeInt
-TypeFloat
-TypeString
-TypeBool
-TypeSlice
-
 -CoercionMode int
 CoercionModeDefault
 CoercionModeNumLiteral

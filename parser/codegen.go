@@ -40,13 +40,13 @@ func (g *Generator) indent(str string) string {
 
 
 func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode) string {
-	if from == to || to == NoCoercion {
+	if from == to || to.String() == "NoCoercion" {
 		return content
 	}
 
-	switch from {
+	switch from.(type) {
 	case TypeInt:
-		switch to {
+		switch to.(type) {
 		case TypeFloat:
 			return fmt.Sprintf("float64(%s)", content)
 		case TypeString:
@@ -58,7 +58,7 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			panic("Unimplemented coercion")
 		}
 	case TypeFloat:
-		switch to {
+		switch to.(type) {
 		case TypeInt:
 			if mode == CoercionModeNumLiteral {
 				g.addImport("math")
@@ -74,7 +74,7 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			panic("Unimplemented coercion")
 		}
 	case TypeString:
-		switch to {
+		switch to.(type) {
 		case TypeInt:
 			g.addPreludeFunction("stringToInt")
 			return fmt.Sprintf("stringToInt(%s)", content)
@@ -103,11 +103,11 @@ func (g *Generator) codegenBool(node *BoolNode) string {
 }
 
 func (g *Generator) codegenStringLiteral(node *StringLiteralNode, coercion Type) string {
-	return g.coerce("\""+node.token.str+"\"", TypeString, coercion, CoercionModeDefault)
+	return g.coerce("\""+node.token.str+"\"", TypeString{}, coercion, CoercionModeDefault)
 }
 
 func literalToStr(value string, typ Type) string {
-	switch typ {
+	switch typ.(type) {
 	case TypeInt, TypeFloat, TypeBool:
 		return value
 	case TypeString:
@@ -120,7 +120,7 @@ func literalToStr(value string, typ Type) string {
 
 func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	varName := node.token.str
-	if coercion == NoCoercion {
+	if coercion.String() == "NoCoercion" {
 		return varName
 	}
 
@@ -145,7 +145,7 @@ func (g *Generator) codegenSliceLiteral(node *SliceLiteralNode, coercion Type) s
 func (g *Generator) codegenUnaryOp(node *UnaryOpNode) string {
 	switch node.op.kind {
 	case Not:
-		return fmt.Sprintf("%s(%s)", node.op.str, g.codegenExpr(node.expr, TypeBool))
+		return fmt.Sprintf("%s(%s)", node.op.str, g.codegenExpr(node.expr, TypeBool{}))
 	default:
 		panic("Codegen for unary op not implemeneted")
 	}
@@ -195,7 +195,7 @@ func (g *Generator) codegenAssign(node *AssignNode) string {
 	if node.declaration {
 		opStr = ":="
 	}
-	lhs := g.codegenVar(node.left.(*VarNode), NoCoercion)
+	lhs := g.codegenVar(node.left.(*VarNode), NoCoercion{})
 	lhsSymbol := g.scope.symbols[lhs]
 
 	// If variable is not used, add `_ = varname` after assignment
@@ -229,7 +229,7 @@ func (g *Generator) codegenCompoundStatement(node *CompoundStatementNode) string
 }
 
 func (g *Generator) codegenType(typ Type) string {
-	switch typ {
+	switch typ.(type) {
 	case TypeInt:
 		return "int"
 	case TypeFloat:
@@ -244,7 +244,7 @@ func (g *Generator) codegenType(typ Type) string {
 }
 
 func (g *Generator) codegenReturnType(typ Type) string {
-	if typ == NoReturnType {
+	if typ == nil || typ.String() == "NoReturnType" {
 		return ""
 	}
 	return g.codegenType(typ)
@@ -287,7 +287,7 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 
 	if node.name == "print" {
 		for _, argument := range node.arguments {
-			argumentStrings = append(argumentStrings, g.codegenExpr(argument.(*ArgumentNode).expr, NoCoercion))
+			argumentStrings = append(argumentStrings, g.codegenExpr(argument.(*ArgumentNode).expr, NoCoercion{}))
 		}
 	} else {
 		for i, p := range symbol.paramsNode.parameters {
@@ -317,7 +317,7 @@ func (g *Generator) codegenReturn(node *ReturnNode) string {
 func (g *Generator) codegenIf(node *IfNode) string {
 	coerceType := node.compType
 	if node.comp.Type() == VarNodeType {
-		coerceType = TypeBool
+		coerceType = TypeBool{}
 	}
 
 	var elseCode string
@@ -345,7 +345,7 @@ func (g *Generator) codegenStatement(node Node) string {
 	case FunctionNodeType:
 		return g.codegenFunction(node.(*FunctionNode))
 	case FunctionCallNodeType:
-		return g.codegenFunctionCall(node.(*FunctionCallNode), NoCoercion)
+		return g.codegenFunctionCall(node.(*FunctionCallNode), NoCoercion{})
 	case ReturnNodeType:
 		return g.codegenReturn(node.(*ReturnNode))
 	case IfNodeType:

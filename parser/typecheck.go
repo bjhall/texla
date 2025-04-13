@@ -28,11 +28,11 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 	case NumNodeType:
 		return node.(*NumNode).NumType()
 	case StringLiteralNodeType:
-		return TypeString
+		return TypeString{}
 	case BoolNodeType:
-		return TypeBool
+		return TypeBool{}
 	case SliceLiteralNodeType:
-		typeCoercionPrecedence := map[Type]int{TypeFloat: 3, TypeString: 2, TypeInt: 1}
+		typeCoercionPrecedence := map[Type]int{TypeFloat{}: 3, TypeString{}: 2, TypeInt{}: 1}
 
 		var coercionType Type
 		var highestPrecedence int
@@ -50,7 +50,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		}
 
 		node.(*SliceLiteralNode).elementType = coercionType
-		return TypeSlice
+		return TypeSlice{}
 
 	case BinOpNodeType:
 		leftType := tc.typecheckExpr(node.(*BinOpNode).left)
@@ -58,13 +58,13 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		if leftType == rightType {
 			return leftType
 		}
-		if leftType == TypeFloat || rightType == TypeFloat {
-			return TypeFloat
+		if leftType.String() == "float" || rightType.String() == "float" {
+			return TypeFloat{}
 		}
-		if leftType == TypeString || rightType == TypeString {
-			return TypeFloat
+		if leftType.String() == "string" || rightType.String() == "string" {
+			return TypeFloat{}
 		}
-		return TypeInt
+		return TypeInt{}
 
 	case UnaryOpNodeType:
 		return tc.typecheckExpr(node.(*UnaryOpNode).expr)
@@ -88,7 +88,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		fmt.Println("TODO: Typechecking not implemented for", node.Type())
 		os.Exit(1)
 	}
-	return TypeUndetermined
+	return TypeUndetermined{}
 }
 
 func (tc *TypeChecker) traverse(node Node) {
@@ -123,7 +123,7 @@ func (tc *TypeChecker) traverse(node Node) {
 
 		lhsSymbol, found := tc.scope.lookupSymbol(lhs.(*VarNode).token.str)
 
-		if found && lhsSymbol.typ == TypeUndetermined {
+		if found && lhsSymbol.typ.String() == "Undetermined" {
 			rhsType := tc.typecheckExpr(rhs)
 			tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
 		} else {
