@@ -50,6 +50,7 @@ ReturnNodeType
 IfNodeType
 SliceLiteralNodeType
 ArgumentNodeType
+IndexedVarNodeType
 
 -Type int
 TypeUndetermined

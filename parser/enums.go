@@ -94,6 +94,7 @@ const (
 	IfNodeType
 	SliceLiteralNodeType
 	ArgumentNodeType
+	IndexedVarNodeType
 )
 
 
@@ -118,6 +119,7 @@ func (s NodeType) String() string {
 	case IfNodeType: return "If"
 	case SliceLiteralNodeType: return "SliceLiteral"
 	case ArgumentNodeType: return "Argument"
+	case IndexedVarNodeType: return "IndexedVar"
 
 	default: return "???"
 	}

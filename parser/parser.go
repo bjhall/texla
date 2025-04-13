@@ -9,8 +9,6 @@ type Symbol struct {
 	name           string
 	used           bool
 	category       SymbolCategory
-	//parameterTypes []Type
-	//parameterOrder []string
 	paramsNode     *ParameterListNode
 }
 
@@ -715,6 +713,17 @@ func (p *Parser) parseVar(checkIfDeclared bool) (Node, error) {
 		if isDeclared := p.validateVariable(token.str); !isDeclared {
 			return &NoOpNode{}, fmt.Errorf("Use of non-declared variable: %q %d:%d", token.str, token.line, token.column)
 		}
+	}
+
+	// Indexing (eg. a[10])
+	if p.currentToken().kind == OpenBracket {
+		p.consumeToken() // [
+		indexNode, err := p.parseExpr()
+		_, err = p.expectToken(CloseBracket)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return &IndexedVarNode{token: token, index: indexNode}, nil
 	}
 	return &VarNode{token: token}, nil
 

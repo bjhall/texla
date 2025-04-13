@@ -120,6 +120,28 @@ func (n *VarNode) Precedence() int {
 	return 0
 }
 
+// Indexed variable node
+type IndexedVarNode struct {
+	Node
+	token Token
+	index Node
+}
+
+func (n *IndexedVarNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Indexed Variable: " + n.token.str)
+	fmt.Println(indentation + "Index:")
+	n.index.Print(level+1)
+}
+
+func (n *IndexedVarNode) Type() NodeType {
+	return IndexedVarNodeType
+}
+
+func (n *IndexedVarNode) Precedence() int {
+	return 0
+}
+
 
 // Binary operator node
 type BinOpNode struct {

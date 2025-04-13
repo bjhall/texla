@@ -65,15 +65,18 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 			return TypeFloat
 		}
 		return TypeInt
+
 	case UnaryOpNodeType:
 		return tc.typecheckExpr(node.(*UnaryOpNode).expr)
+
 	case VarNodeType:
-		varSymbol, found :=  tc.scope.lookupSymbol(node.(*VarNode).token.str)
+		varSymbol, found := tc.scope.lookupSymbol(node.(*VarNode).token.str)
 		if found {
 			return varSymbol.typ
 		}
 		fmt.Println("UNREACHABLE: Trying to look up type of undefined variable")
 		os.Exit(1)
+
 	case FunctionCallNodeType:
 		funcSymbol, found := tc.scope.lookupSymbol(node.(*FunctionCallNode).name)
 		if found {
