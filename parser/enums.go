@@ -95,6 +95,7 @@ const (
 	SliceLiteralNodeType
 	ArgumentNodeType
 	IndexedVarNodeType
+	ForeachNodeType
 )
 
 
@@ -120,6 +121,7 @@ func (s NodeType) String() string {
 	case SliceLiteralNodeType: return "SliceLiteral"
 	case ArgumentNodeType: return "Argument"
 	case IndexedVarNodeType: return "IndexedVar"
+	case ForeachNodeType: return "Foreach"
 
 	default: return "???"
 	}

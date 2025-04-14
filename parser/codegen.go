@@ -354,6 +354,14 @@ func (g *Generator) codegenIf(node *IfNode) string {
 	)
 }
 
+func (g *Generator) codegenForeach(node *ForeachNode) string {
+	return fmt.Sprintf("for _, %s := range %s %s",
+		g.codegenVar(&node.variable, NoCoercion{}),
+		g.codegenExpr(node.iterator, NoCoercion{}),
+		g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
+	)
+}
+
 func (g *Generator) codegenStatement(node Node) string {
 	switch node.Type() {
 	case AssignNodeType:
@@ -368,6 +376,8 @@ func (g *Generator) codegenStatement(node Node) string {
 		return g.codegenReturn(node.(*ReturnNode))
 	case IfNodeType:
 		return g.codegenIf(node.(*IfNode))
+	case ForeachNodeType:
+		return g.codegenForeach(node.(*ForeachNode))
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in statement", node.Type())
 		panic("")

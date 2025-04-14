@@ -259,6 +259,10 @@ func (n *CompoundStatementNode) Precedence() int {
 	return 0
 }
 
+func (n *CompoundStatementNode) SetVarType(name string, typ Type) {
+	n.scope.setSymbolType(name, typ)
+}
+
 // Function
 type FunctionNode struct {
 	Node
@@ -477,6 +481,33 @@ func (n *IfNode) Type() NodeType {
 }
 
 func (n *IfNode) Precedence() int {
+	return 1000
+}
+
+
+// Foreach node
+type ForeachNode struct {
+	Node
+	iterator Node
+	variable VarNode
+	body     Node
+}
+
+func (n *ForeachNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Foreach, iterator:")
+	n.iterator.Print(level+1)
+	fmt.Println(indentation + "Foreach, control variable:")
+	n.variable.Print(level+1)
+	fmt.Println(indentation + "Foreach, body:")
+	n.body.Print(level+1)
+}
+
+func (n *ForeachNode) Type() NodeType {
+	return ForeachNodeType
+}
+
+func (n *ForeachNode) Precedence() int {
 	return 1000
 }
 

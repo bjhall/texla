@@ -627,6 +627,50 @@ func (p *Parser) parseIfStatement() (Node, error) {
 	return &IfNode{comp: comp, body: body, elseBody: &NoOpNode{}}, nil
 }
 
+func (p *Parser) parseIterator() (Node, error) {
+	switch p.currentToken().kind {
+	case Identifier, OpenBracket:
+		expr, err := p.parseExpr()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return expr, nil
+	default:
+		panic("Non-supported iterator...")
+	}
+}
+
+func (p *Parser) parseForLoop() (Node, error) {
+	_, err := p.expectToken(Keyword) // for
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	iterator, err := p.parseIterator()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	_, err = p.expectToken(RightArrow) // ->
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	variable, err := p.parseVar(false)
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+	controlVariable := &ParameterNode{name: variable.(*VarNode).token.str, typ: TypeUndetermined{}}
+
+	body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturnType{})
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	variableNode, _ := variable.(*VarNode)
+	return &ForeachNode{iterator: iterator, variable: *variableNode, body: body}, nil
+}
+
 func (p *Parser) parseStatement() (Node, error) {
 	switch p.currentToken().kind {
 
@@ -670,6 +714,12 @@ func (p *Parser) parseStatement() (Node, error) {
 			return node, nil
 		case "if":
 			node, err := p.parseIfStatement()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return node, nil
+		case "for":
+			node, err := p.parseForLoop()
 			if err != nil {
 				return &NoOpNode{}, err
 			}

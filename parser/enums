@@ -51,6 +51,7 @@ IfNodeType
 SliceLiteralNodeType
 ArgumentNodeType
 IndexedVarNodeType
+ForeachNodeType
 
 -CoercionMode int
 CoercionModeDefault
