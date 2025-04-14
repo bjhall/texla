@@ -117,7 +117,6 @@ func literalToStr(value string, typ Type) string {
 	}
 }
 
-
 func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	varName := node.token.str
 	if coercion.String() == "NoCoercion" {
@@ -130,6 +129,20 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	}
 
 	return g.coerce(varName, symbol.typ, coercion, CoercionModeDefault)
+}
+
+func (g *Generator) codegenIndexedVar(node *IndexedVarNode, coercion Type) string {
+	varName := node.token.str
+	indexedVar := fmt.Sprintf("%s[%s]", varName, g.codegenExpr(node.index, TypeInt{}))
+	if coercion.String() == "NoCoercion" {
+		return indexedVar
+	}
+
+	symbol, _ := g.scope.lookupSymbol(varName)
+	if symbol.category != VariableSymbol {
+		panic("Should be variable...") // TODO: ASSERT
+	}
+	return g.coerce(indexedVar, symbol.typ.(TypeSlice).ElementType, coercion, CoercionModeDefault)
 }
 
 func (g *Generator) codegenSliceLiteral(node *SliceLiteralNode, coercion Type) string {
@@ -370,6 +383,8 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 		return g.codegenStringLiteral(node.(*StringLiteralNode), coercion)
 	case VarNodeType:
 		return g.codegenVar(node.(*VarNode), coercion)
+	case IndexedVarNodeType:
+		return g.codegenIndexedVar(node.(*IndexedVarNode), coercion) //.(TypeSlice).ElementType)
 	case FunctionCallNodeType:
 		return g.codegenFunctionCall(node.(*FunctionCallNode), coercion)
 	case SliceLiteralNodeType:

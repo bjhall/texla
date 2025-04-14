@@ -50,7 +50,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		}
 
 		node.(*SliceLiteralNode).elementType = coercionType
-		return TypeSlice{}
+		return TypeSlice{ElementType: coercionType}
 
 	case BinOpNodeType:
 		leftType := tc.typecheckExpr(node.(*BinOpNode).left)
@@ -76,6 +76,21 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		}
 		fmt.Println("UNREACHABLE: Trying to look up type of undefined variable")
 		os.Exit(1)
+
+	case IndexedVarNodeType:
+		varSymbol, found := tc.scope.lookupSymbol(node.(*IndexedVarNode).token.str)
+		if !found {
+			fmt.Println("UNREACHABLE: Trying to look up type of undefined indexed variable")
+			os.Exit(1)
+		}
+		switch t := varSymbol.typ.(type) {
+		case TypeSlice:
+			return t.ElementType
+		case TypeString:
+			panic("string indexing now implemented")
+		default:
+			fmt.Println("%s is not indexable", t)
+		}
 
 	case FunctionCallNodeType:
 		funcSymbol, found := tc.scope.lookupSymbol(node.(*FunctionCallNode).name)
@@ -187,6 +202,10 @@ func (tc *TypeChecker) traverse(node Node) {
 				tc.traverse(node.(*FunctionCallNode).arguments[argIdx])
 			}
 		}
+
+	case IndexedVarNodeType:
+		tc.traverse(node.(*IndexedVarNode).index)
+
 	case ArgumentNodeType:
 		tc.traverse(node.(*ArgumentNode).expr)
 
