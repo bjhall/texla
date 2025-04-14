@@ -114,6 +114,7 @@ func (tc *TypeChecker) traverse(node Node) {
 		compType := tc.typecheckExpr(node.(*IfNode).comp)
 		node.(*IfNode).setCompType(compType)
 		// TODO: Ensure that comparison is a boolean value
+		tc.traverse(node.(*IfNode).comp)
 		tc.traverse(node.(*IfNode).body)
 		tc.traverse(node.(*IfNode).elseBody)
 
@@ -198,7 +199,7 @@ func (tc *TypeChecker) traverse(node Node) {
 			tc.traverse(el)
 		}
 
-	case StringLiteralNodeType, NumNodeType, BoolNodeType, VarNodeType, NoOpNodeType:
+	case StringLiteralNodeType, NumNodeType, BoolNodeType, VarNodeType, NoOpNodeType, UnaryOpNodeType:
 		return
 
 	default:
