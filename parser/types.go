@@ -4,6 +4,11 @@ type Type interface {
 	String() string
 }
 
+type IterableType interface {
+	Type
+	GetElementType() Type
+}
+
 type TypeInt struct{}
 func (t TypeInt) String() string { return "int" }
 
@@ -12,6 +17,7 @@ func (t TypeFloat) String() string { return "float" }
 
 type TypeString struct{}
 func (t TypeString) String() string { return "str" }
+func (t TypeString) GetElementType() Type { return TypeString{} }
 
 type TypeBool struct{}
 func (t TypeBool) String() string { return "bool" }
@@ -30,6 +36,7 @@ type TypeSlice struct{
 	ElementType Type
 }
 func (t TypeSlice) String() string { return "[]" + t.ElementType.String() }
+func (t TypeSlice) GetElementType() Type { return t.ElementType }
 
 //type MapType struct {
 //	KeyType   Type
