@@ -34,16 +34,14 @@ const (
 	FunctionSymbol
 )
 
-func newScope(parent *Scope, parameters *ParameterListNode, returnType Type) *Scope {
+func newScope(parent *Scope, parameters []ParameterNode, returnType Type) *Scope {
 
 	symbols := make(map[string]Symbol)
 
 	// Add function parameters to the scopes list of declared symbols
 	if parameters != nil {
-		for _, param := range parameters.parameters {
-			name := param.(*ParameterNode).name
-			typ := param.(*ParameterNode).typ
-			symbols[name] = Symbol{typ, name, false, VariableSymbol, &ParameterListNode{}}
+		for _, param := range parameters {
+			symbols[param.name] = Symbol{param.typ, param.name, false, VariableSymbol, &ParameterListNode{}}
 		}
 	}
 
@@ -138,7 +136,7 @@ func (p *Parser) unusedVariables() []string {
 	return unused
 }
 
-func (p *Parser) newScope(parameters *ParameterListNode, returnType Type) {
+func (p *Parser) newScope(parameters []ParameterNode, returnType Type) {
 	p.currentScope = newScope(p.currentScope, parameters, returnType)
 }
 
@@ -327,7 +325,7 @@ func (p *Parser) parseSliceLiteral() (Node, error) {
 	return &SliceLiteralNode{elements:elements}, nil
 }
 
-func (p *Parser) parseCompoundStatement(parameters *ParameterListNode, returnType Type) (Node, error) {
+func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType Type) (Node, error) {
 
 	_, err := p.expectToken(OpenCurly)
 	if err != nil {
@@ -418,13 +416,13 @@ func (p *Parser) parseParameter() (Node, error) {
 }
 
 func (p *Parser) parseParameterList() (Node, error) {
-	var paramList []Node
+	var paramList []ParameterNode
 	for p.currentToken().kind != CloseParen {
 		param, err := p.parseParameter()
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		paramList = append(paramList, param)
+		paramList = append(paramList, *param.(*ParameterNode))
 		switch p.currentToken().kind {
 		case Comma:
 			p.consumeToken()
@@ -488,7 +486,7 @@ func (p *Parser) parseFunction() (Node, error) {
 		return &NoOpNode{}, fmt.Errorf("Function with name %q already exists in the same scope", functionName.str)
 	}
 
-	functionBody, err := p.parseCompoundStatement(parameterList.(*ParameterListNode), returnType)
+	functionBody, err := p.parseCompoundStatement(parameterList.(*ParameterListNode).parameters, returnType)
 	if err != nil {
 		return &NoOpNode{}, err
 	}

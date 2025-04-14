@@ -401,7 +401,7 @@ func (n *ParameterNode) Precedence() int {
 // Parameter list node
 type ParameterListNode struct {
 	Node
-	parameters []Node
+	parameters []ParameterNode
 }
 
 func (n *ParameterListNode) Print(level int) {

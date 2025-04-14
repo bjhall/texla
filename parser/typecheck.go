@@ -176,8 +176,7 @@ func (tc *TypeChecker) traverse(node Node) {
 		}
 
 		// Validate and typecheck arguments
-		for i, p := range symbol.paramsNode.parameters {
-			param := p.(*ParameterNode)
+		for i, param := range symbol.paramsNode.parameters {
 			var givenType Type
 			var argIdx int
 			found := false

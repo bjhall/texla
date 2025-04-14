@@ -276,7 +276,7 @@ func (g *Generator) codegenParameter(node *ParameterNode) string {
 func (g *Generator) codegenParameterList(node *ParameterListNode) string {
 	var parameters []string
 	for _, param := range node.parameters {
-		parameters = append(parameters, g.codegenParameter(param.(*ParameterNode)))
+		parameters = append(parameters, g.codegenParameter(&param))
 	}
 	return strings.Join(parameters, ", ")
 }
@@ -309,8 +309,7 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 			argumentStrings = append(argumentStrings, g.codegenExpr(argument.(*ArgumentNode).expr, NoCoercion{}))
 		}
 	} else {
-		for i, p := range symbol.paramsNode.parameters {
-			param := p.(*ParameterNode)
+		for i, param := range symbol.paramsNode.parameters {
 			if i < len(node.argumentOrder) && node.argumentOrder[i] != ArgNotProvided {
 				argIdx := node.argumentOrder[i]
 				argument := node.arguments[argIdx].(*ArgumentNode)
