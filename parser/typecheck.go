@@ -87,7 +87,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		case TypeSlice:
 			return t.ElementType
 		case TypeString:
-			panic("string indexing now implemented")
+			return TypeString{}
 		default:
 			fmt.Println("%s is not indexable", t)
 		}

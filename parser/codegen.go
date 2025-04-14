@@ -133,16 +133,22 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 
 func (g *Generator) codegenIndexedVar(node *IndexedVarNode, coercion Type) string {
 	varName := node.token.str
+
 	indexedVar := fmt.Sprintf("%s[%s]", varName, g.codegenExpr(node.index, TypeInt{}))
-	if coercion.String() == "NoCoercion" {
-		return indexedVar
-	}
 
 	symbol, _ := g.scope.lookupSymbol(varName)
 	if symbol.category != VariableSymbol {
 		panic("Should be variable...") // TODO: ASSERT
 	}
-	return g.coerce(indexedVar, symbol.typ.(TypeSlice).ElementType, coercion, CoercionModeDefault)
+
+	switch t := symbol.typ.(type) {
+	case TypeSlice:
+		return g.coerce(indexedVar, t.ElementType, coercion, CoercionModeDefault)
+	case TypeString:
+		return fmt.Sprintf("string(%s)", g.coerce(indexedVar, TypeString{}, coercion, CoercionModeDefault))
+	default:
+		panic("Non-indxable type")
+	}
 }
 
 func (g *Generator) codegenSliceLiteral(node *SliceLiteralNode, coercion Type) string {
