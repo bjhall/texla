@@ -257,6 +257,8 @@ func (g *Generator) codegenType(typ Type) string {
 		return "string"
 	case TypeBool:
 		return "bool"
+	case TypeVoid:
+		return ""
 	default:
 		panic("UNIMPLEMENTED TYPE") // FIXME
 	}
@@ -328,8 +330,13 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 }
 
 func (g *Generator) codegenReturn(node *ReturnNode) string {
-	expectedReturnType := g.scope.returnType
-	return fmt.Sprintf("return %s", g.codegenExpr(node.expr, expectedReturnType))
+	// Find closest returnable scope
+	returnScope := g.scope
+	for returnScope.returnType.String() == "NoReturn" {
+		returnScope = returnScope.parent
+	}
+
+	return fmt.Sprintf("return %s", g.codegenExpr(node.expr, returnScope.returnType))
 }
 
 func (g *Generator) codegenIf(node *IfNode) string {

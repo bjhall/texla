@@ -28,8 +28,11 @@ func (t TypeUndetermined) String() string { return "Undetermined" }
 type NoCoercion struct{}
 func (t NoCoercion) String() string { return "NoCoercion" }
 
-type NoReturnType struct{}
-func (t NoReturnType) String() string { return "NoReturnType" }
+type NoReturn struct{}
+func (t NoReturn) String() string { return "NoReturn" }
+
+type TypeVoid struct{}
+func (t TypeVoid) String() string { return "Void" }
 
 
 type TypeSlice struct{

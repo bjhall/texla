@@ -483,13 +483,15 @@ func (p *Parser) parseFunction() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	var returnType Type // := NoReturnType{}
+	var returnType Type
 	if p.currentToken().kind == RightArrow {
 		p.consumeToken()
 		returnType, err = p.parseReturnType()
 		if err != nil {
 			return &NoOpNode{}, err
 		}
+	} else {
+		returnType = TypeVoid{}
 	}
 
 	isNew := p.createFunctionInCurrentScope(functionName.str, parameterList.(*ParameterListNode), returnType)
@@ -633,7 +635,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	body, err := p.parseCompoundStatement(nil, NoReturnType{})
+	body, err := p.parseCompoundStatement(nil, NoReturn{})
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -646,7 +648,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		if p.currentToken().kind == Keyword && p.currentToken().str == "if" {
 			elseBody, err = p.parseIfStatement()
 		} else { // just else
-			elseBody, err = p.parseCompoundStatement(nil, NoReturnType{})
+			elseBody, err = p.parseCompoundStatement(nil, NoReturn{})
 		}
 		if err != nil {
 			return &NoOpNode{}, err
@@ -692,7 +694,7 @@ func (p *Parser) parseForLoop() (Node, error) {
 	}
 	controlVariable := &ParameterNode{name: variable.(*VarNode).token.str, typ: TypeUndetermined{}}
 
-	body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturnType{})
+	body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturn{})
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -765,7 +767,7 @@ func (p *Parser) parseStatement() (Node, error) {
 		}
 
 	case OpenCurly:
-		node, err := p.parseCompoundStatement(nil, NoReturnType{})
+		node, err := p.parseCompoundStatement(nil, NoReturn{})
 		if err != nil {
 			return &NoOpNode{}, err
 		}
@@ -825,7 +827,7 @@ func (p *Parser) parseAssign() (Node, error) {
 }
 
 func Parse(tokens []Token) (Node, error) {
-	rootScope := newScope(nil, nil, NoReturnType{})
+	rootScope := newScope(nil, nil, NoReturn{})
 	parser := Parser{tokens, 0, 0, rootScope, make(map[string]bool)}
 
 	var functions []Node
