@@ -243,7 +243,7 @@ func (p *Parser) parsePrimary() (Node, error) {
 	case Identifier:
 		switch p.peek(1).kind {
 		case OpenParen: // Function call
-			functionCall, err := p.parseFunctionCall()
+			functionCall, err := p.parseFunctionCall(nil)
 			if err != nil {
 				return &NoOpNode{}, err
 			}
@@ -253,6 +253,17 @@ func (p *Parser) parsePrimary() (Node, error) {
 			if err != nil {
 				return &NoOpNode{}, err
 			}
+
+			// Chained function call
+			if p.currentToken().kind == Period {
+				p.consumeToken() // .
+				chained, err := p.parseFunctionCall(variable)
+				if err != nil {
+					return &NoOpNode{}, err
+				}
+				return chained, nil
+			}
+
 			return variable, nil
 		}
 
@@ -494,7 +505,7 @@ func (p *Parser) parseFunction() (Node, error) {
 	return &FunctionNode{name: functionName, parameters: parameterList, body: functionBody, returnType: returnType}, nil
 }
 
-func (p *Parser) parseArgumentList() ([]Node, error) {
+func (p *Parser) parseArgumentList(self Node) ([]Node, error) {
 	var arguments []Node
 
 	_, err := p.expectToken(OpenParen)
@@ -504,6 +515,13 @@ func (p *Parser) parseArgumentList() ([]Node, error) {
 
 	namedArgumentSeen := false
 	orderedArgumentCount := 0
+
+	// If function chaining was used, add "self" argument to beginning of argument list
+	if self != nil {
+		arguments = append(arguments, &ArgumentNode{expr: self, named: false, order: 0})
+		orderedArgumentCount++
+	}
+
 	for p.currentToken().kind != CloseParen {
 
 		paramName := ""
@@ -541,12 +559,11 @@ func (p *Parser) parseArgumentList() ([]Node, error) {
 	return arguments, nil
 }
 
-func (p *Parser) parseFunctionCall() (Node, error) {
+func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 	var functionNode Token
 	var err error
 	switch p.currentToken().kind {
 	case Identifier:
-		// TODO: Check if function is defined
 		functionNode, err = p.expectToken(Identifier)
 
 	// Special case for reserved keywords that are called as functions
@@ -564,8 +581,8 @@ func (p *Parser) parseFunctionCall() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	argumentList, err := p.parseArgumentList()
-	// TODO: Check if right number of arguments
+	argumentList, err := p.parseArgumentList(self)
+
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -574,7 +591,20 @@ func (p *Parser) parseFunctionCall() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
-	return &FunctionCallNode{name: functionNode.str, arguments: argumentList}, nil
+
+	functionCall := &FunctionCallNode{name: functionNode.str, arguments: argumentList}
+
+	// Chained function call
+	if p.currentToken().kind == Period {
+		p.consumeToken() // .
+		chained, err := p.parseFunctionCall(functionCall)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return chained, nil
+	}
+
+	return functionCall, nil
 }
 
 func (p *Parser) parseReturn() (Node, error) {
@@ -683,7 +713,7 @@ func (p *Parser) parseStatement() (Node, error) {
 			}
 			return node, nil
 		case OpenParen:
-			node, err := p.parseFunctionCall()
+			node, err := p.parseFunctionCall(nil)
 			if err != nil {
 				return &NoOpNode{}, err
 			}
@@ -701,7 +731,7 @@ func (p *Parser) parseStatement() (Node, error) {
 			}
 			return node, nil
 		case "print":
-			node, err := p.parseFunctionCall()
+			node, err := p.parseFunctionCall(nil)
 			if err != nil {
 				return &NoOpNode{}, err
 			}

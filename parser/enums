@@ -4,6 +4,7 @@ Identifier
 Integer
 Float
 Comma
+Period
 OpenCurly
 CloseCurly
 OpenParen

@@ -222,6 +222,8 @@ func (t *Tokenizer) nextToken() (Token, error) {
 		return t.createTokenConsume(Div, 1), nil
 	case ',':
 		return t.createTokenConsume(Comma, 1), nil
+	case '.':
+		return t.createTokenConsume(Period, 1), nil
 	case '"':
 		t.skip(1)
 		stringLiteral := t.consumeUntil('"')

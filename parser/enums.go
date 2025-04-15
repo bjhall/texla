@@ -7,6 +7,7 @@ const (
 	Integer
 	Float
 	Comma
+	Period
 	OpenCurly
 	CloseCurly
 	OpenParen
@@ -42,6 +43,7 @@ func (s TokenKind) String() string {
 	case Integer: return "Integer"
 	case Float: return "Float"
 	case Comma: return "Comma"
+	case Period: return "Period"
 	case OpenCurly: return "OpenCurly"
 	case CloseCurly: return "CloseCurly"
 	case OpenParen: return "OpenParen"

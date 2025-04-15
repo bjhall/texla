@@ -334,7 +334,9 @@ func (n *FunctionCallNode) Print(level int) {
 	} else {
 		fmt.Println(indentation+ "Ordered arguments:")
 		for _, idx := range n.argumentOrder {
-			n.arguments[idx].Print(level+1)
+			if idx != ArgNotProvided {
+				n.arguments[idx].Print(level+1)
+			}
 		}
 	}
 }
