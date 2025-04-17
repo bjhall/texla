@@ -814,7 +814,11 @@ func (p *Parser) parseAssign() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
-	isNew := p.createVariableInCurrentScope(left.(*VarNode).token.str, TypeUndetermined{})
+	lhsName := left.(*VarNode).token.str
+	_, exists := p.currentScope.lookupSymbol(lhsName)
+	if !exists {
+		_ = p.createVariableInCurrentScope(lhsName, TypeUndetermined{})
+	}
 	token, err := p.expectToken(Assign)
 	if err != nil {
 		return &NoOpNode{}, err
@@ -823,7 +827,7 @@ func (p *Parser) parseAssign() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
-	return &AssignNode{left: left, tok: token, right: right, declaration: isNew}, nil
+	return &AssignNode{left: left, tok: token, right: right, declaration: !exists}, nil
 }
 
 func Parse(tokens []Token) (Node, error) {

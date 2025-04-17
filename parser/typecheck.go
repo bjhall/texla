@@ -143,7 +143,7 @@ func (tc *TypeChecker) traverse(node Node) {
 			rhsType := tc.typecheckExpr(rhs)
 			tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
 		} else {
-			panic("TODO: Variable reassignment not implemented")
+			// Do nothing?
 		}
 
 		tc.traverse(rhs)

@@ -119,6 +119,7 @@ func literalToStr(value string, typ Type) string {
 
 func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	varName := node.token.str
+
 	if coercion.String() == "NoCoercion" {
 		return varName
 	}
@@ -215,7 +216,11 @@ func (g *Generator) codegenAssign(node *AssignNode) string {
 		opStr = ":="
 	}
 	lhs := g.codegenVar(node.left.(*VarNode), NoCoercion{})
-	lhsSymbol := g.scope.symbols[lhs]
+	lhsSymbol, found := g.scope.lookupSymbol(node.left.(*VarNode).token.str)
+	if !found {
+		panic("Codegen of non-defined symbol in assignment")
+	}
+
 
 	// If variable is not used, add `_ = varname` after assignment
 	unusedStr := ""
