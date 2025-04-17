@@ -53,6 +53,22 @@ func (p *Tokenizer) skip(n int) {
 	}
 }
 
+func (p *Tokenizer) revert(n int) {
+	end := p.pos - n
+	for p.pos > end {
+		if p.pos == 0 {
+			break
+		}
+		if p.currentRune() == '\n' {
+			p.currentColumn = 0 // TODO: THIS IS NOT RIGHT
+			p.currentLine -= 1
+		} else {
+			p.currentColumn -= 1
+		}
+		p.pos--
+	}
+}
+
 func (p *Tokenizer) EOF() bool {
 	return p.pos >= len(p.source)-1
 }
@@ -127,6 +143,13 @@ func (t *Tokenizer) consumeNumber() (Token, error) {
 		if t.currentRune() == '.' {
 			dotCount += 1
 		}
+	}
+
+	// Number should not end with a .
+	if numberString[len(numberString)-1] == '.' {
+		dotCount -= 1
+		numberString = numberString[:len(numberString)-1]
+		t.revert(1)
 	}
 
 	switch dotCount {

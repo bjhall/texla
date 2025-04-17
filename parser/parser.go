@@ -238,7 +238,20 @@ func (p *Parser) parsePrimary() (Node, error) {
 		return expr, nil
 
 	case Integer, Float:
-		return &NumNode{token: p.consumeToken()}, nil
+
+		node := &NumNode{token: p.consumeToken()}
+
+		// Chained function call
+		if p.currentToken().kind == Period {
+			p.consumeToken() // .
+			chained, err := p.parseFunctionCall(node)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return chained, nil
+		}
+
+		return node, nil
 
 	case Identifier:
 		switch p.peek(1).kind {
