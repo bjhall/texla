@@ -291,7 +291,20 @@ func (p *Parser) parsePrimary() (Node, error) {
 		}
 
 	case StringLiteral:
-		return &StringLiteralNode{token: p.consumeToken()}, nil
+
+		node := &StringLiteralNode{token: p.consumeToken()}
+
+		// Chained function call
+		if p.currentToken().kind == Period {
+			p.consumeToken() // .
+			chained, err := p.parseFunctionCall(node)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return chained, nil
+		}
+
+		return node, nil
 
 	case Not:
 		op := p.consumeToken()
