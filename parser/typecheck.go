@@ -99,6 +99,15 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		}
 		fmt.Println("UNREACHABLE: Trying to look up type of non-existing function")
 		os.Exit(1)
+	case RangeNodeType:
+		fromType := tc.typecheckExpr(node.(*RangeNode).from)
+		if (fromType != TypeInt{}) {
+			tc.error("The from value of a range must be integer")
+		}
+		toType := tc.typecheckExpr(node.(*RangeNode).from)
+		if (toType != TypeInt{}) {
+			tc.error("The to value of a range must be integer")
+		}
 	default:
 		fmt.Println("TODO: Typechecking not implemented for", node.Type())
 		os.Exit(1)
@@ -218,8 +227,15 @@ func (tc *TypeChecker) traverse(node Node) {
 		}
 
 	case ForeachNodeType:
-		iterType := tc.typecheckExpr(node.(*ForeachNode).iterator)
-		controlVarType := iterType.(IterableType).GetElementType()
+		var controlVarType Type
+
+		switch node.(*ForeachNode).iterator.Type() {
+		case RangeNodeType:
+			controlVarType = TypeInt{}
+		default:
+			iterType := tc.typecheckExpr(node.(*ForeachNode).iterator)
+			controlVarType = iterType.(IterableType).GetElementType()
+		}
 		node.(*ForeachNode).body.(*CompoundStatementNode).SetVarType(node.(*ForeachNode).variable.token.str, controlVarType)
 		tc.traverse(node.(*ForeachNode).body)
 

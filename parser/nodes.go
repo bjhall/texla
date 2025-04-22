@@ -537,3 +537,29 @@ func (n *SliceLiteralNode) Type() NodeType {
 func (n *SliceLiteralNode) Precedence() int {
 	return 1000
 }
+
+// Range node
+type RangeNode struct {
+	Node
+	token Token
+	from  Node
+	to    Node
+	step  int
+}
+
+func (n *RangeNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Range, step:", n.step)
+	fmt.Println(indentation + "    " + "From:")
+	n.from.Print(level+1)
+	fmt.Println(indentation + "    " + "To:")
+	n.to.Print(level+1)
+}
+
+func (n *RangeNode) Type() NodeType {
+	return RangeNodeType
+}
+
+func (n *RangeNode) Precedence() int {
+	return 1000
+}

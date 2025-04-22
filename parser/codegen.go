@@ -367,11 +367,25 @@ func (g *Generator) codegenIf(node *IfNode) string {
 }
 
 func (g *Generator) codegenForeach(node *ForeachNode) string {
-	return fmt.Sprintf("for _, %s := range %s %s",
-		g.codegenVar(&node.variable, NoCoercion{}),
-		g.codegenExpr(node.iterator, NoCoercion{}),
-		g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
-	)
+
+	// Foreach loop with range: `for 1..10 -> x`
+	if node.iterator.Type() == RangeNodeType {
+		r := node.iterator.(*RangeNode)
+		return fmt.Sprintf("for %s := %s; %s <= %s; %s++ %s",
+			node.variable.token.str,
+			g.codegenExpr(r.from, TypeInt{}),
+			node.variable.token.str,
+			g.codegenExpr(r.to, TypeInt{}),
+			node.variable.token.str,
+			g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
+		)
+	} else { // Foreach loop with iterator: `for list -> x`
+		return fmt.Sprintf("for _, %s := range %s %s",
+			g.codegenVar(&node.variable, NoCoercion{}),
+			g.codegenExpr(node.iterator, NoCoercion{}),
+			g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
+		)
+	}
 }
 
 func (g *Generator) codegenStatement(node Node) string {

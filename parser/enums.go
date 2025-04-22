@@ -31,6 +31,7 @@ const (
 	RightArrow
 	Whitespace
 	StringLiteral
+	Range
 	NoToken
 	Eof
 )
@@ -67,6 +68,7 @@ func (s TokenKind) String() string {
 	case RightArrow: return "RightArrow"
 	case Whitespace: return "Whitespace"
 	case StringLiteral: return "StringLiteral"
+	case Range: return "Range"
 	case NoToken: return "NoToken"
 	case Eof: return "Eof"
 
@@ -98,6 +100,7 @@ const (
 	ArgumentNodeType
 	IndexedVarNodeType
 	ForeachNodeType
+	RangeNodeType
 )
 
 
@@ -124,6 +127,7 @@ func (s NodeType) String() string {
 	case ArgumentNodeType: return "Argument"
 	case IndexedVarNodeType: return "IndexedVar"
 	case ForeachNodeType: return "Foreach"
+	case RangeNodeType: return "Range"
 
 	default: return "???"
 	}

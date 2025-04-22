@@ -28,6 +28,7 @@ Comment
 RightArrow
 Whitespace
 StringLiteral
+Range
 NoToken
 Eof
 
@@ -53,6 +54,7 @@ SliceLiteralNodeType
 ArgumentNodeType
 IndexedVarNodeType
 ForeachNodeType
+RangeNodeType
 
 -CoercionMode int
 CoercionModeDefault

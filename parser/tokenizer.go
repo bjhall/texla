@@ -141,6 +141,11 @@ func (t *Tokenizer) consumeNumber() (Token, error) {
 	for (t.atNumber() || t.currentRune() == '.') && !t.EOF() {
 		numberString += string(t.consume())
 		if t.currentRune() == '.' {
+
+			// Two dots after integer, looks like a range. Just return whatever's before the ".."
+			if dotCount == 0 && t.peek(1) == '.' {
+				return t.createTokenFromString(Integer, numberString), nil
+			}
 			dotCount += 1
 		}
 	}
@@ -246,6 +251,9 @@ func (t *Tokenizer) nextToken() (Token, error) {
 	case ',':
 		return t.createTokenConsume(Comma, 1), nil
 	case '.':
+		if t.peek(1) == '.' {
+			return t.createTokenConsume(Range, 2), nil
+		}
 		return t.createTokenConsume(Period, 1), nil
 	case '"':
 		t.skip(1)

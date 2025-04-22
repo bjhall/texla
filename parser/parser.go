@@ -686,15 +686,26 @@ func (p *Parser) parseIfStatement() (Node, error) {
 }
 
 func (p *Parser) parseIterator() (Node, error) {
+	firstExpr, err := p.parseExpr()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
 	switch p.currentToken().kind {
-	case Identifier, OpenBracket:
-		expr, err := p.parseExpr()
+	case Range:
+		rangeToken := p.consumeToken() // ..
+		rangeEnd, err := p.parseExpr()
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		return expr, nil
+		return &RangeNode{token: rangeToken, from: firstExpr, to: rangeEnd, step: 1}, nil
+
 	default:
-		panic("Non-supported iterator...")
+		switch firstExpr.Type() {
+		case VarNodeType, SliceLiteralNodeType:
+			return firstExpr, nil
+		default:
+			panic("Non-supported iterator...")
+		}
 	}
 }
 
