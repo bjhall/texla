@@ -864,6 +864,15 @@ func (p *Parser) parseAssign() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
+	if p.currentToken().kind == Range {
+		// TODO: Factor this stuff out to a parseRange that takes the "from" node as an argument
+		rangeToken := p.consumeToken() // ..
+		end, err := p.parseExpr()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return &AssignNode{left: left, tok: token, right: &RangeNode{token: rangeToken, from: right, to: end, step: 1}, declaration: !exists}, nil
+	}
 	return &AssignNode{left: left, tok: token, right: right, declaration: !exists}, nil
 }
 

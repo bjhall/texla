@@ -26,6 +26,17 @@ func stringToInt(s string) int {
 `
 	case "intToString":
 		return ""
+
+	case "createRange":
+		return `
+func ___createRange(from int, to int) []int {
+    a := make([]int, to-from+1)
+    for i := range a {
+        a[i] = from + i
+    }
+    return a
+}
+`
 	default:
 		panic("Unknown prelude")
 
@@ -38,6 +49,8 @@ func preludeImports(name string) []string {
 		return []string{"fmt", "strconv", "os"}
 	case "intToString":
 		return []string{"strconv"}
+	case "createRange":
+		return []string{}
 	default:
 		panic("Unknown prelude")
 	}

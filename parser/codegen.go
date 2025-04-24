@@ -430,6 +430,9 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 		return g.codegenFunctionCall(node.(*FunctionCallNode), coercion)
 	case SliceLiteralNodeType:
 		return g.codegenSliceLiteral(node.(*SliceLiteralNode), coercion)
+	case RangeNodeType:
+		g.addPreludeFunction("createRange")
+		return fmt.Sprintf("___createRange(%s, %s)", g.codegenExpr(node.(*RangeNode).from, TypeInt{}), g.codegenExpr(node.(*RangeNode).to, TypeInt{}))
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in expression", node.Type())
 		panic("")
