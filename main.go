@@ -30,7 +30,7 @@ func main() {
 	}
 
 	if DEBUG {
-		fmt.Println(os.Stderr, "CODE:", string(code[:]))
+		fmt.Fprint(os.Stderr, "CODE:", string(code[:]) + "\n")
 
 		fmt.Println("TOKENS:")
 		for idx, token := range tokens {
