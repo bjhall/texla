@@ -283,9 +283,9 @@ func (p *Parser) parsePrimary() (Node, error) {
 	case Keyword:
 		switch keyword := p.currentToken().str; keyword {
 		case "true":
-			return &BoolNode{token: p.consumeToken(), value: true}, nil
+			return &BoolNode{token: p.consumeToken()}, nil
 		case "false":
-			return &BoolNode{token: p.consumeToken(), value: false}, nil
+			return &BoolNode{token: p.consumeToken()}, nil
 		default:
 			return &NoOpNode{}, fmt.Errorf("Unexpected keyword: %q", keyword)
 		}

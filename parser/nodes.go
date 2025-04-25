@@ -64,7 +64,6 @@ func (n *NumNode) NumType() Type {
 type BoolNode struct {
 	Node
 	token Token
-	value bool
 }
 
 func (n *BoolNode) Print(level int) {
