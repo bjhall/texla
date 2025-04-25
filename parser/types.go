@@ -10,35 +10,43 @@ type IterableType interface {
 }
 
 type TypeInt struct{}
+
 func (t TypeInt) String() string { return "int" }
 
 type TypeFloat struct{}
+
 func (t TypeFloat) String() string { return "float" }
 
 type TypeString struct{}
-func (t TypeString) String() string { return "str" }
+
+func (t TypeString) String() string       { return "str" }
 func (t TypeString) GetElementType() Type { return TypeString{} }
 
 type TypeBool struct{}
+
 func (t TypeBool) String() string { return "bool" }
 
 type TypeUndetermined struct{}
+
 func (t TypeUndetermined) String() string { return "Undetermined" }
 
 type NoCoercion struct{}
+
 func (t NoCoercion) String() string { return "NoCoercion" }
 
 type NoReturn struct{}
+
 func (t NoReturn) String() string { return "NoReturn" }
 
 type TypeVoid struct{}
+
 func (t TypeVoid) String() string { return "Void" }
 
-
-type TypeSlice struct{
+type TypeSlice struct {
 	ElementType Type
 }
-func (t TypeSlice) String() string { return "[]" + t.ElementType.String() }
+
+func (t TypeSlice) String() string       { return "[]" + t.ElementType.String() }
 func (t TypeSlice) GetElementType() Type { return t.ElementType }
 
 func isAppendable(t Type) bool {
@@ -61,12 +69,12 @@ func isGeneric(t Type) bool {
 
 // Generic types
 type TypeAny struct{}
+
 func (t TypeAny) String() string { return "any" }
 
 type TypeAppendable struct{}
+
 func (t TypeAppendable) String() string { return "appendable" }
-
-
 
 //type MapType struct {
 //	KeyType   Type

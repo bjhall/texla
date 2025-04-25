@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"flag"
 	"bytes"
+	"flag"
+	"fmt"
+	"github.com/bjhall/texla/parser"
 	"os"
 	"os/exec"
-	"github.com/bjhall/texla/parser"
 )
 
 func main() {
@@ -23,14 +23,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	tokens, err := parser.Tokenize(string(code)+"\n")
+	tokens, err := parser.Tokenize(string(code) + "\n")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "LEXER ERROR: %s\n", err)
 		os.Exit(1)
 	}
 
 	if DEBUG {
-		fmt.Fprint(os.Stderr, "CODE:", string(code[:]) + "\n")
+		fmt.Fprint(os.Stderr, "CODE:", string(code[:])+"\n")
 
 		fmt.Println("TOKENS:")
 		for idx, token := range tokens {
@@ -82,13 +82,13 @@ func main() {
 	defer os.Remove("/tmp/a.go")
 
 	var outbuf, errbuf bytes.Buffer
-	cmd := exec.Command("go", "build", "-o", "/tmp/a",  "/tmp/a.go")
-    cmd.Stdout = &outbuf
-    cmd.Stderr = &errbuf
+	cmd := exec.Command("go", "build", "-o", "/tmp/a", "/tmp/a.go")
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
 
 	err = cmd.Run()
-    stdout := outbuf.String()
-    stderr := errbuf.String()
+	stdout := outbuf.String()
+	stderr := errbuf.String()
 
 	if err != nil {
 		fmt.Println("GO COMPILATION ERROR. THIS SHOULD NEVER HAPPEN!")
@@ -98,8 +98,8 @@ func main() {
 	}
 
 	cmd = exec.Command("/tmp/a")
-    cmd.Stdout = &outbuf
-    cmd.Stderr = &errbuf
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
 	err = cmd.Run()
 
 	if err != nil {

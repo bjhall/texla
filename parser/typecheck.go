@@ -7,15 +7,14 @@ import (
 )
 
 type TypeChecker struct {
-	scope       *Scope
-	errors      []string
-	imports     map[string]bool
+	scope   *Scope
+	errors  []string
+	imports map[string]bool
 }
 
 func (tc *TypeChecker) error(errorStr string) {
 	tc.errors = append(tc.errors, fmt.Sprintf("%s", errorStr))
 }
-
 
 func (tc *TypeChecker) addImport(name string) {
 	tc.imports[name] = true
@@ -55,7 +54,6 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 	}
 	return returnType
 }
-
 
 func (tc *TypeChecker) typecheckExpr(node Node) Type {
 	switch node.Type() {
@@ -282,8 +280,6 @@ func (tc *TypeChecker) traverse(node Node) {
 	}
 }
 
-
-
 func CheckTypes(root Node) (Node, error) {
 	typeChecker := TypeChecker{nil, []string{}, make(map[string]bool)}
 
@@ -296,7 +292,6 @@ func CheckTypes(root Node) (Node, error) {
 	if len(typeChecker.errors) > 0 {
 		return root, fmt.Errorf(strings.Join(typeChecker.errors, "\n"))
 	}
-
 
 	return root, nil
 }

@@ -5,11 +5,11 @@ import (
 )
 
 type Symbol struct {
-	typ            Type
-	name           string
-	used           bool
-	category       SymbolCategory
-	paramsNode     *ParameterListNode
+	typ        Type
+	name       string
+	used       bool
+	category   SymbolCategory
+	paramsNode *ParameterListNode
 }
 
 func (v *Symbol) setUsed() {
@@ -20,8 +20,6 @@ func (v *Symbol) getType(typ Type) Type {
 	return v.typ
 }
 
-
-
 type Scope struct {
 	parent     *Scope
 	symbols    map[string]Symbol
@@ -29,6 +27,7 @@ type Scope struct {
 }
 
 type SymbolCategory int
+
 const (
 	VariableSymbol SymbolCategory = iota
 	FunctionSymbol
@@ -75,9 +74,6 @@ func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, par
 	return true
 }
 
-
-
-
 type Parser struct {
 	tokens       []Token
 	tokenIdx     int
@@ -102,7 +98,6 @@ func (s *Scope) setVariableUsed(name string) error {
 	return s.parent.setVariableUsed(name)
 }
 
-
 func (p *Parser) validateVariable(name string) bool {
 	symbol, found := p.currentScope.lookupSymbol(name)
 
@@ -116,7 +111,6 @@ func (p *Parser) validateVariable(name string) bool {
 
 	return true
 }
-
 
 func (p *Parser) createVariableInCurrentScope(name string, typ Type) bool {
 	return p.currentScope.createSymbol(name, VariableSymbol, typ, &ParameterListNode{})
@@ -164,8 +158,6 @@ func (p *Parser) expectToken(kind TokenKind) (Token, error) {
 	return Token{}, fmt.Errorf("Invalid token: expected %s, got %s %d:%d", kind, p.currentToken().kind, p.currentToken().line, p.currentToken().column)
 }
 
-
-
 func (p *Parser) parseExpr() (Node, error) {
 	node, err := p.parseComparison()
 	if err != nil {
@@ -180,7 +172,7 @@ func (p *Parser) parseComparison() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	for p.currentToken().kind == Equal || p.currentToken().kind == NotEqual || p.currentToken().kind == Greater || p.currentToken().kind == GreaterEqual ||  p.currentToken().kind == Less ||  p.currentToken().kind == LessEqual {
+	for p.currentToken().kind == Equal || p.currentToken().kind == NotEqual || p.currentToken().kind == Greater || p.currentToken().kind == GreaterEqual || p.currentToken().kind == Less || p.currentToken().kind == LessEqual {
 		opToken := p.consumeToken()
 		right, err := p.parseTerm()
 		if err != nil {
@@ -206,7 +198,6 @@ func (p *Parser) parseTerm() (Node, error) {
 	}
 	return node, nil
 }
-
 
 func (p *Parser) parseFactor() (Node, error) {
 	node, err := p.parsePrimary()
@@ -312,7 +303,7 @@ func (p *Parser) parsePrimary() (Node, error) {
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		return &UnaryOpNode{op: op, expr:expr}, nil
+		return &UnaryOpNode{op: op, expr: expr}, nil
 
 	case OpenBracket:
 		slice, err := p.parseSliceLiteral()
@@ -359,7 +350,7 @@ func (p *Parser) parseSliceLiteral() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	return &SliceLiteralNode{elements:elements}, nil
+	return &SliceLiteralNode{elements: elements}, nil
 }
 
 func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType Type) (Node, error) {
@@ -764,7 +755,7 @@ func (p *Parser) parseStatement() (Node, error) {
 			}
 			return node, nil
 		default:
-			return  &NoOpNode{}, fmt.Errorf("Syntax error (ADD PROPER ERROR MESSAGE HERE")
+			return &NoOpNode{}, fmt.Errorf("Syntax error (ADD PROPER ERROR MESSAGE HERE")
 		}
 
 	case Keyword:
@@ -806,7 +797,7 @@ func (p *Parser) parseStatement() (Node, error) {
 			}
 			return node, nil
 		default:
-			return  &NoOpNode{}, fmt.Errorf("TODO: Parsing of keyword %q not implemented", p.currentToken().str)
+			return &NoOpNode{}, fmt.Errorf("TODO: Parsing of keyword %q not implemented", p.currentToken().str)
 		}
 
 	case OpenCurly:

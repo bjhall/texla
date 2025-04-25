@@ -32,7 +32,6 @@ func newTokenizer(source_string string) Tokenizer {
 	return parser
 }
 
-
 func (p *Tokenizer) currentRune() rune {
 	return rune(p.source[p.pos])
 }
@@ -169,23 +168,21 @@ func (t *Tokenizer) consumeNumber() (Token, error) {
 
 func (t *Tokenizer) createTokenConsume(kind TokenKind, nchar int) Token {
 	return Token{
-		kind: kind,
-		str: string(t.consumeMany(nchar)),
-		line: t.currentLine,
+		kind:   kind,
+		str:    string(t.consumeMany(nchar)),
+		line:   t.currentLine,
 		column: t.currentColumn,
 	}
 }
 
 func (t *Tokenizer) createTokenFromString(kind TokenKind, str string) Token {
 	return Token{
-		kind: kind,
-		str: str,
-		line: t.currentLine,
+		kind:   kind,
+		str:    str,
+		line:   t.currentLine,
 		column: t.currentColumn,
 	}
 }
-
-
 
 func (t *Tokenizer) nextToken() (Token, error) {
 

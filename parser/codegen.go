@@ -24,11 +24,9 @@ func (g *Generator) addImport(name string) {
 	g.imports[name] = true
 }
 
-
 func (g *Generator) error(errorStr string) {
 	g.errors = append(g.errors, fmt.Sprintf("CODEGEN ERROR: %s", errorStr))
 }
-
 
 func (g *Generator) indent(str string) string {
 	var indentation string
@@ -37,7 +35,6 @@ func (g *Generator) indent(str string) string {
 	}
 	return indentation + str
 }
-
 
 func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode) string {
 	if from == to || to.String() == "NoCoercion" {
@@ -90,8 +87,6 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 		panic("Unimplemented coercion")
 	}
 }
-
-
 
 func (g *Generator) codegenNum(node *NumNode, coercion Type) string {
 	return g.coerce(node.token.str, node.NumType(), coercion, CoercionModeNumLiteral)
@@ -177,16 +172,15 @@ func (g *Generator) codegenBinOp(node *BinOpNode, coercion Type) string {
 	return fmt.Sprintf("%s %s %s", left, node.op.str, right)
 }
 
-
 func (g *Generator) codegenWithParens(node Node, parent Node, coercion Type) string {
-    result := g.codegenExpr(node, coercion)
+	result := g.codegenExpr(node, coercion)
 
-    // Add parentheses if:
-    // 1. The child is a binary operation
-    // 2. The child's precedence is lower than the parent's
-    needsParens := false
+	// Add parentheses if:
+	// 1. The child is a binary operation
+	// 2. The child's precedence is lower than the parent's
+	needsParens := false
 
-    if node.Type() == BinOpNodeType && parent.Type() == BinOpNodeType {
+	if node.Type() == BinOpNodeType && parent.Type() == BinOpNodeType {
 		childOp := node.(*BinOpNode)
 		parentOp := parent.(*BinOpNode)
 
@@ -202,12 +196,12 @@ func (g *Generator) codegenWithParens(node Node, parent Node, coercion Type) str
 				needsParens = true
 			}
 		}
-    }
+	}
 
-    if needsParens {
-        return "(" + result + ")"
-    }
-    return result
+	if needsParens {
+		return "(" + result + ")"
+	}
+	return result
 }
 
 func (g *Generator) codegenAssign(node *AssignNode) string {
@@ -220,7 +214,6 @@ func (g *Generator) codegenAssign(node *AssignNode) string {
 	if !found {
 		panic("Codegen of non-defined symbol in assignment")
 	}
-
 
 	// If variable is not used, add `_ = varname` after assignment
 	unusedStr := ""
@@ -358,7 +351,6 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 	return g.coerce(callStr, builtin.returnType, coercion, CoercionModeDefault)
 }
 
-
 func (g *Generator) codegenReturn(node *ReturnNode) string {
 	// Find closest returnable scope
 	returnScope := g.scope
@@ -484,7 +476,6 @@ func (g *Generator) codegenProgram(node Node) string {
 	}
 
 	return fmt.Sprintf("package main\n\n%s\n\n%s\n\n%s", strings.Join(importStrs, "\n"), prelude, strings.Join(functionStrs, "\n\n"))
-
 
 }
 

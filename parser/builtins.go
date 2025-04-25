@@ -1,12 +1,12 @@
 package parser
 
 type BuiltinFunc struct {
-	name          string
-	returnType    Type
-	parameters    []ParameterNode
+	name       string
+	returnType Type
+	parameters []ParameterNode
 }
 
-var builtins = map[string]BuiltinFunc {
+var builtins = map[string]BuiltinFunc{
 	"len": {
 		name:       "len",
 		returnType: TypeInt{},

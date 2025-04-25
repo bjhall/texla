@@ -11,14 +11,14 @@ type Node interface {
 	Precedence() int
 }
 
-// NoOp 
+// NoOp
 type NoOpNode struct {
 	Node
 }
 
 func (n *NoOpNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "NoOp")
+	fmt.Println(indentation + "NoOp")
 }
 
 func (n *NoOpNode) Type() NodeType {
@@ -29,7 +29,6 @@ func (n *NoOpNode) Precedence() int {
 	return 0
 }
 
-
 // Number literals
 type NumNode struct {
 	Node
@@ -38,7 +37,7 @@ type NumNode struct {
 
 func (n *NumNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ n.token.str)
+	fmt.Println(indentation + n.token.str)
 }
 
 func (n *NumNode) Type() NodeType {
@@ -68,7 +67,7 @@ type BoolNode struct {
 
 func (n *BoolNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ n.token.str)
+	fmt.Println(indentation + n.token.str)
 }
 
 func (n *BoolNode) Type() NodeType {
@@ -79,7 +78,6 @@ func (n *BoolNode) Precedence() int {
 	return 0
 }
 
-
 // String literals
 type StringLiteralNode struct {
 	Node
@@ -88,7 +86,7 @@ type StringLiteralNode struct {
 
 func (n *StringLiteralNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation + "\""+ n.token.str + "\"")
+	fmt.Println(indentation + "\"" + n.token.str + "\"")
 }
 
 func (n *StringLiteralNode) Type() NodeType {
@@ -98,7 +96,6 @@ func (n *StringLiteralNode) Type() NodeType {
 func (n *StringLiteralNode) Precedence() int {
 	return 0
 }
-
 
 // Variable node
 type VarNode struct {
@@ -130,7 +127,7 @@ func (n *IndexedVarNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation + "Indexed Variable: " + n.token.str)
 	fmt.Println(indentation + "Index:")
-	n.index.Print(level+1)
+	n.index.Print(level + 1)
 }
 
 func (n *IndexedVarNode) Type() NodeType {
@@ -141,20 +138,19 @@ func (n *IndexedVarNode) Precedence() int {
 	return 0
 }
 
-
 // Binary operator node
 type BinOpNode struct {
 	Node
-	left   Node
-	op     Token
-	right  Node
+	left  Node
+	op    Token
+	right Node
 }
 
 func (n *BinOpNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "BinOp", n.op.str)
-	n.left.Print(level+1)
-	n.right.Print(level+1)
+	fmt.Println(indentation+"BinOp", n.op.str)
+	n.left.Print(level + 1)
+	n.right.Print(level + 1)
 }
 
 func (n *BinOpNode) Type() NodeType {
@@ -180,14 +176,14 @@ func (n *BinOpNode) Precedence() int {
 // Unary operator node
 type UnaryOpNode struct {
 	Node
-	op     Token
-	expr   Node
+	op   Token
+	expr Node
 }
 
 func (n *UnaryOpNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "UnaryOp", n.op.str)
-	n.expr.Print(level+1)
+	fmt.Println(indentation+"UnaryOp", n.op.str)
+	n.expr.Print(level + 1)
 }
 
 func (n *UnaryOpNode) Type() NodeType {
@@ -203,7 +199,6 @@ func (n *UnaryOpNode) Precedence() int {
 	}
 }
 
-
 // Assignment node
 type AssignNode struct {
 	Node
@@ -216,12 +211,12 @@ type AssignNode struct {
 func (n *AssignNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	if n.declaration {
-		fmt.Println(indentation+ "VarDeclaration")
+		fmt.Println(indentation + "VarDeclaration")
 	} else {
-		fmt.Println(indentation+ "VarAssignment")
+		fmt.Println(indentation + "VarAssignment")
 	}
-	n.left.Print(level+1)
-	n.right.Print(level+1)
+	n.left.Print(level + 1)
+	n.right.Print(level + 1)
 }
 
 func (n *AssignNode) Type() NodeType {
@@ -231,7 +226,6 @@ func (n *AssignNode) Type() NodeType {
 func (n *AssignNode) Precedence() int {
 	return 6
 }
-
 
 // Compound statements
 type CompoundStatementNode struct {
@@ -243,10 +237,10 @@ type CompoundStatementNode struct {
 
 func (n *CompoundStatementNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "CompoundStatement, (unused vars: " + strings.Join(n.unusedVars, ",") +")" + "")// + "Return type: " + n.scope.returnType.String())
+	fmt.Println(indentation + "CompoundStatement, (unused vars: " + strings.Join(n.unusedVars, ",") + ")" + "") // + "Return type: " + n.scope.returnType.String())
 
 	for _, child := range n.children {
-		child.Print(level+1)
+		child.Print(level + 1)
 	}
 }
 
@@ -273,9 +267,9 @@ type FunctionNode struct {
 
 func (n *FunctionNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "Function", n.name.str)
-	n.parameters.Print(level+1)
-	n.body.Print(level+1)
+	fmt.Println(indentation+"Function", n.name.str)
+	n.parameters.Print(level + 1)
+	n.body.Print(level + 1)
 }
 
 func (n *FunctionNode) Type() NodeType {
@@ -298,8 +292,8 @@ type ArgumentNode struct {
 
 func (n *ArgumentNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "Argument", "named:", n.named, "paramName:", n.paramName, "order:", n.order, "type:", n.typ)
-	n.expr.Print(level+1)
+	fmt.Println(indentation+"Argument", "named:", n.named, "paramName:", n.paramName, "order:", n.order, "type:", n.typ)
+	n.expr.Print(level + 1)
 }
 
 func (n *ArgumentNode) Type() NodeType {
@@ -310,33 +304,32 @@ func (n *ArgumentNode) Precedence() int {
 	return 7
 }
 
-
 // Function call
 type FunctionCallNode struct {
 	Node
-	name          string
-	arguments     []Node
-	isBuiltin     bool
-	resolvedArgs  map[string]ArgumentNode
+	name               string
+	arguments          []Node
+	isBuiltin          bool
+	resolvedArgs       map[string]ArgumentNode
 	resolvedReturnType Type
 }
 
 func (n *FunctionCallNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "FunctionCall", n.name, "builtin?", n.isBuiltin)
+	fmt.Println(indentation+"FunctionCall", n.name, "builtin?", n.isBuiltin)
 	if len(n.arguments) == 0 && len(n.resolvedArgs) == 0 {
 		return
 	}
 	if len(n.resolvedArgs) == 0 {
-		fmt.Println(indentation+ "Unresolved arguments:")
+		fmt.Println(indentation + "Unresolved arguments:")
 		for _, arg := range n.arguments {
-			arg.Print(level+1)
+			arg.Print(level + 1)
 		}
 	} else {
-		fmt.Println(indentation+ "Resolved arguments:")
+		fmt.Println(indentation + "Resolved arguments:")
 		for argName, arg := range n.resolvedArgs {
-			fmt.Println(indentation+ "* "+argName)
-			arg.Print(level+1)
+			fmt.Println(indentation + "* " + argName)
+			arg.Print(level + 1)
 		}
 	}
 }
@@ -387,7 +380,6 @@ func (n *FunctionCallNode) matchArgsToParams(parameters []ParameterNode) error {
 	return nil
 }
 
-
 // Program node
 type ProgramNode struct {
 	Node
@@ -398,9 +390,9 @@ type ProgramNode struct {
 
 func (n *ProgramNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "Program")
+	fmt.Println(indentation + "Program")
 	for _, arg := range n.functions {
-		arg.Print(level+1)
+		arg.Print(level + 1)
 	}
 }
 
@@ -427,7 +419,7 @@ type ParameterNode struct {
 
 func (n *ParameterNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "Parameter", n.name, n.typ, "HasDefault:", n.hasDefault, "Default value:", n.defaultValue)
+	fmt.Println(indentation+"Parameter", n.name, n.typ, "HasDefault:", n.hasDefault, "Default value:", n.defaultValue)
 }
 
 func (n *ParameterNode) Type() NodeType {
@@ -461,9 +453,9 @@ type ParameterListNode struct {
 
 func (n *ParameterListNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "ParameterList")
+	fmt.Println(indentation + "ParameterList")
 	for _, arg := range n.parameters {
-		arg.Print(level+1)
+		arg.Print(level + 1)
 	}
 }
 
@@ -475,7 +467,6 @@ func (n *ParameterListNode) Precedence() int {
 	return 10
 }
 
-
 // Return node
 type ReturnNode struct {
 	Node
@@ -486,8 +477,8 @@ type ReturnNode struct {
 
 func (n *ReturnNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "Return")
-	n.expr.Print(level+1)
+	fmt.Println(indentation + "Return")
+	n.expr.Print(level + 1)
 }
 
 func (n *ReturnNode) setType(typ Type) {
@@ -502,7 +493,6 @@ func (n *ReturnNode) Precedence() int {
 	return 100
 }
 
-
 // If node
 type IfNode struct {
 	Node
@@ -515,11 +505,11 @@ type IfNode struct {
 func (n *IfNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation + "If")
-	n.comp.Print(level+1)
-	n.body.Print(level+1)
+	n.comp.Print(level + 1)
+	n.body.Print(level + 1)
 	if n.elseBody.Type() != NoOpNodeType {
 		fmt.Println(indentation + "Else")
-		n.elseBody.Print(level+1)
+		n.elseBody.Print(level + 1)
 	}
 }
 
@@ -535,7 +525,6 @@ func (n *IfNode) Precedence() int {
 	return 1000
 }
 
-
 // Foreach node
 type ForeachNode struct {
 	Node
@@ -547,11 +536,11 @@ type ForeachNode struct {
 func (n *ForeachNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation + "Foreach, iterator:")
-	n.iterator.Print(level+1)
+	n.iterator.Print(level + 1)
 	fmt.Println(indentation + "Foreach, control variable:")
-	n.variable.Print(level+1)
+	n.variable.Print(level + 1)
 	fmt.Println(indentation + "Foreach, body:")
-	n.body.Print(level+1)
+	n.body.Print(level + 1)
 }
 
 func (n *ForeachNode) Type() NodeType {
@@ -562,7 +551,6 @@ func (n *ForeachNode) Precedence() int {
 	return 1000
 }
 
-
 // SLice literal node
 type SliceLiteralNode struct {
 	Node
@@ -572,10 +560,10 @@ type SliceLiteralNode struct {
 
 func (n *SliceLiteralNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation + "Slice literal,", n.elementType)
+	fmt.Println(indentation+"Slice literal,", n.elementType)
 	for i, e := range n.elements {
-		fmt.Println(indentation + "    " + "Element", i)
-		e.Print(level+1)
+		fmt.Println(indentation+"    "+"Element", i)
+		e.Print(level + 1)
 	}
 }
 
@@ -598,11 +586,11 @@ type RangeNode struct {
 
 func (n *RangeNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation + "Range, step:", n.step)
+	fmt.Println(indentation+"Range, step:", n.step)
 	fmt.Println(indentation + "    " + "From:")
-	n.from.Print(level+1)
+	n.from.Print(level + 1)
 	fmt.Println(indentation + "    " + "To:")
-	n.to.Print(level+1)
+	n.to.Print(level + 1)
 }
 
 func (n *RangeNode) Type() NodeType {
