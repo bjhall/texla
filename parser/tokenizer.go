@@ -270,8 +270,6 @@ func (t *Tokenizer) nextToken() (Token, error) {
 	default:
 		return Token{}, fmt.Errorf("Unknown token: %s", strconv.QuoteRune(t.currentRune()))
 	}
-
-	panic("Unsupported token")
 }
 
 func Tokenize(code_string string) ([]Token, error) {

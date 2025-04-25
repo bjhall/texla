@@ -121,7 +121,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		case TypeString:
 			return TypeString{}
 		default:
-			fmt.Println("%s is not indexable", t)
+			fmt.Printf("%s is not indexable\n", t)
 		}
 
 	case FunctionCallNodeType:
