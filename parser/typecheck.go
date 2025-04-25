@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const ArgNotProvided = -1
-
 type TypeChecker struct {
 	scope       *Scope
 	errors      []string
@@ -22,6 +20,42 @@ func (tc *TypeChecker) error(errorStr string) {
 func (tc *TypeChecker) addImport(name string) {
 	tc.imports[name] = true
 }
+
+func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
+	var returnType Type
+	fnNode := node.(*FunctionCallNode)
+	builtin := builtins[fnNode.name]
+	if !isGeneric(builtin.returnType) {
+		returnType = builtin.returnType
+	} else {
+		panic("Resolve generic return type")
+	}
+
+	err := fnNode.matchArgsToParams(builtin.parameters)
+	if err != nil {
+		tc.error(err.Error())
+	}
+
+	switch builtin.name {
+	case "append":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["dest"].expr)
+		if !isAppendable(containerType) {
+			tc.error(fmt.Sprintf("append() cannot be used on type %q", containerType))
+		}
+		node.(*FunctionCallNode).setArgType("dest", containerType)
+
+	case "len":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["var"].expr)
+		if !isAppendable(containerType) {
+			tc.error(fmt.Sprintf("len() cannot be used on type %q", containerType))
+		}
+
+	default:
+		panic(fmt.Sprintf("Typechecking not implemented for builtin %q", builtin.name))
+	}
+	return returnType
+}
+
 
 func (tc *TypeChecker) typecheckExpr(node Node) Type {
 	switch node.Type() {
@@ -93,12 +127,24 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		}
 
 	case FunctionCallNodeType:
-		funcSymbol, found := tc.scope.lookupSymbol(node.(*FunctionCallNode).name)
+		fnNode := node.(*FunctionCallNode)
+		functionName := fnNode.name
+		if isBuiltin(functionName) {
+			return tc.typecheckBuiltin(fnNode)
+		}
+
+		funcSymbol, found := tc.scope.lookupSymbol(functionName)
+
 		if found {
+			err := fnNode.matchArgsToParams(funcSymbol.paramsNode.parameters)
+			if err != nil {
+				tc.error(err.Error())
+			}
 			return funcSymbol.typ
 		}
 		fmt.Println("UNREACHABLE: Trying to look up type of non-existing function")
 		os.Exit(1)
+
 	case RangeNodeType:
 		fromType := tc.typecheckExpr(node.(*RangeNode).from)
 		if (fromType != TypeInt{}) {
@@ -162,15 +208,24 @@ func (tc *TypeChecker) traverse(node Node) {
 		node.(*ReturnNode).setType(tc.typecheckExpr(node.(*ReturnNode).expr))
 
 	case FunctionCallNodeType:
-		functionName := node.(*FunctionCallNode).name
+		fnNode := node.(*FunctionCallNode)
+		functionName := fnNode.name
 
-		symbol, found := tc.scope.lookupSymbol(functionName)
+		var parameters []ParameterNode
 
-		// Check if symbol is declared
-		if !found {
-			if functionName == "print" {
-				// TODO: HANDLE BUILTINS
-				for _, arg := range node.(*FunctionCallNode).arguments {
+		if isBuiltin(functionName) {
+			_ = tc.typecheckBuiltin(node)
+			parameters = builtins[functionName].parameters
+		} else {
+			symbol, found := tc.scope.lookupSymbol(functionName)
+			if found {
+				if symbol.category != FunctionSymbol {
+					tc.error(fmt.Sprintf("%q is not a function", functionName))
+				}
+				parameters = symbol.paramsNode.parameters
+			} else if functionName == "print" {
+				// TODO: Make print a builtin
+				for _, arg := range fnNode.arguments {
 					tc.traverse(arg.(*ArgumentNode).expr)
 				}
 				return
@@ -180,36 +235,13 @@ func (tc *TypeChecker) traverse(node Node) {
 			}
 		}
 
-		// Check if the symbol is a function
-		if symbol.category != FunctionSymbol {
-			tc.error(fmt.Sprintf("%q is not a function", functionName))
+		err := fnNode.matchArgsToParams(parameters)
+		if err != nil {
+			tc.error(err.Error())
 		}
 
-		// Validate and typecheck arguments
-		for i, param := range symbol.paramsNode.parameters {
-			var givenType Type
-			var argIdx int
-			found := false
-			for j, n := range node.(*FunctionCallNode).arguments {
-				arg := n.(*ArgumentNode)
-				if (arg.named && arg.paramName == param.name) || (!arg.named && arg.order == i) {
-					argIdx = j
-					givenType = tc.typecheckExpr(arg.expr)
-					found = true
-					break
-				}
-			}
-			if !found {
-				if !param.hasDefault {
-					tc.error(fmt.Sprintf("Value missing for argument %q (%s) of function %q", param.name, param.typ, functionName))
-					return
-				}
-				node.(*FunctionCallNode).appendArgumentOrder(ArgNotProvided)
-			} else {
-				node.(*FunctionCallNode).arguments[argIdx].(*ArgumentNode).typ = givenType
-				node.(*FunctionCallNode).appendArgumentOrder(argIdx)
-				tc.traverse(node.(*FunctionCallNode).arguments[argIdx])
-			}
+		for _, argNode := range fnNode.resolvedArgs {
+			tc.traverse(&argNode)
 		}
 
 	case IndexedVarNodeType:

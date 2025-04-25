@@ -316,26 +316,27 @@ type FunctionCallNode struct {
 	Node
 	name          string
 	arguments     []Node
-	argumentOrder []int
+	isBuiltin     bool
+	resolvedArgs  map[string]ArgumentNode
+	resolvedReturnType Type
 }
 
 func (n *FunctionCallNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+ "FunctionCall", n.name)
-	if len(n.arguments) == 0 {
+	fmt.Println(indentation+ "FunctionCall", n.name, "builtin?", n.isBuiltin)
+	if len(n.arguments) == 0 && len(n.resolvedArgs) == 0 {
 		return
 	}
-	if len(n.argumentOrder) == 0 {
-		fmt.Println(indentation+ "Unordered arguments:")
+	if len(n.resolvedArgs) == 0 {
+		fmt.Println(indentation+ "Unresolved arguments:")
 		for _, arg := range n.arguments {
 			arg.Print(level+1)
 		}
 	} else {
-		fmt.Println(indentation+ "Ordered arguments:")
-		for _, idx := range n.argumentOrder {
-			if idx != ArgNotProvided {
-				n.arguments[idx].Print(level+1)
-			}
+		fmt.Println(indentation+ "Resolved arguments:")
+		for argName, arg := range n.resolvedArgs {
+			fmt.Println(indentation+ "* "+argName)
+			arg.Print(level+1)
 		}
 	}
 }
@@ -348,8 +349,42 @@ func (n *FunctionCallNode) Precedence() int {
 	return 7
 }
 
-func (n *FunctionCallNode) appendArgumentOrder(idx int) {
-	n.argumentOrder = append(n.argumentOrder, idx)
+func (n *FunctionCallNode) setArgType(argName string, typ Type) {
+	arg, found := n.resolvedArgs[argName]
+	if !found {
+		panic("Trying to set type of non-existing or unresolved function argument")
+	}
+	arg.typ = typ
+	n.resolvedArgs[argName] = arg
+}
+
+func (n *FunctionCallNode) matchArgsToParams(parameters []ParameterNode) error {
+
+	// Only do the resolution once
+	if len(n.resolvedArgs) > 0 {
+		return nil
+	}
+	paramArgs := make(map[string]ArgumentNode)
+	for i, param := range parameters {
+		found := false
+		for j, a := range n.arguments {
+			arg := a.(*ArgumentNode)
+			if (arg.named && arg.paramName == param.name) || (!arg.named && arg.order == i) {
+				paramArgs[param.name] = *(n.arguments[j].(*ArgumentNode))
+				found = true
+				break
+			}
+		}
+		if !found {
+			if !param.hasDefault {
+				return fmt.Errorf("Value missing for argument %q (%s) of function %q", param.name, param.typ, n.name)
+			}
+			paramArgs[param.name] = param.CreateDefaultNode()
+		}
+	}
+
+	n.resolvedArgs = paramArgs
+	return nil
 }
 
 
@@ -401,6 +436,21 @@ func (n *ParameterNode) Type() NodeType {
 
 func (n *ParameterNode) Precedence() int {
 	return 10
+}
+
+func (n *ParameterNode) CreateDefaultNode() ArgumentNode {
+	switch n.typ.(type) {
+	case TypeString:
+		return ArgumentNode{expr: &StringLiteralNode{token: Token{kind: StringLiteral, str: n.defaultValue}}}
+	case TypeInt:
+		return ArgumentNode{expr: &NumNode{token: Token{kind: Integer, str: n.defaultValue}}}
+	case TypeFloat:
+		return ArgumentNode{expr: &NumNode{token: Token{kind: Float, str: n.defaultValue}}}
+	case TypeBool:
+		return ArgumentNode{expr: &BoolNode{token: Token{kind: Keyword, str: n.defaultValue}}}
+	default:
+		panic(fmt.Sprintf("Cannot construct default value node for parameter type %q\n", n.typ))
+	}
 }
 
 // Parameter list node

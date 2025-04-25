@@ -298,41 +298,66 @@ func (g *Generator) codegenFunction(node *FunctionNode) string {
 }
 
 func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) string {
-	var functionName string
-	var symbol Symbol
-	var argumentStrings []string
 
-	// Some built-ins, such as `print` are essentially just renames of other functions, that's handled here
-	switch node.name {
-	case "print":
-		functionName = "fmt.Println"
-	default:
-		functionName = node.name
-		symbol, _ = g.scope.lookupSymbol(functionName)
+	// Separate codegen function for builtin calls
+	if node.isBuiltin {
+		return g.codegenBuiltinCall(node, coercion)
 	}
 
+	// FIXME: Make print a builtin!
 	if node.name == "print" {
+		var argumentStrings []string
 		for _, argument := range node.arguments {
 			argumentStrings = append(argumentStrings, g.codegenExpr(argument.(*ArgumentNode).expr, NoCoercion{}))
 		}
+		return fmt.Sprintf("fmt.Println(%s)", strings.Join(argumentStrings, ", "))
+
 	} else {
-		for i, param := range symbol.paramsNode.parameters {
-			if i < len(node.argumentOrder) && node.argumentOrder[i] != ArgNotProvided {
-				argIdx := node.argumentOrder[i]
-				argument := node.arguments[argIdx].(*ArgumentNode)
-				argumentStrings = append(argumentStrings, g.codegenExpr(argument.expr, param.typ))
-			} else {
-				if param.hasDefault {
-					argumentStrings = append(argumentStrings, literalToStr(param.defaultValue, param.typ))
-				} else {
-					g.error(fmt.Sprintf("Argument missing for parameter %q in function call to %q", param.name, functionName))
-				}
-			}
+		symbol, _ := g.scope.lookupSymbol(node.name)
+
+		// Codegen all arguements
+		var argumentStrings []string
+		for _, param := range symbol.paramsNode.parameters {
+			argumentStrings = append(argumentStrings, g.codegenExpr(node.resolvedArgs[param.name].expr, param.typ))
 		}
+
+		// Codegen the final call
+		functionCall := fmt.Sprintf("%s(%s)", node.name, strings.Join(argumentStrings, ", "))
+
+		return g.coerce(functionCall, symbol.typ, coercion, CoercionModeDefault)
 	}
-	functionCall := fmt.Sprintf("%s(%s)", functionName, strings.Join(argumentStrings, ", "))
-	return g.coerce(functionCall, symbol.typ, coercion, CoercionModeDefault)
 }
+
+func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) string {
+	builtin := builtins[node.name]
+
+	callStr := ""
+	switch builtin.name {
+
+	case "len":
+		callStr = fmt.Sprintf("len(%s)", g.codegenExpr(node.resolvedArgs["var"].expr, NoCoercion{}))
+
+	case "append":
+		destArg := node.resolvedArgs["dest"]
+		dest := g.codegenVar(destArg.expr.(*VarNode), NoCoercion{})
+		switch destArg.typ.(type) {
+		case TypeSlice:
+			return fmt.Sprintf("%s = append(%s, %s)",
+				dest, dest,
+				g.codegenExpr(
+					node.resolvedArgs["var"].expr,
+					destArg.typ.(IterableType).GetElementType(),
+				),
+			)
+		case TypeString:
+			return fmt.Sprintf("%s += %s", dest, g.codegenExpr(node.resolvedArgs["var"].expr, TypeString{}))
+		}
+	default:
+		panic("Unimplemented bulitin")
+	}
+	return g.coerce(callStr, builtin.returnType, coercion, CoercionModeDefault)
+}
+
 
 func (g *Generator) codegenReturn(node *ReturnNode) string {
 	// Find closest returnable scope

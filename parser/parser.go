@@ -588,18 +588,18 @@ func (p *Parser) parseArgumentList(self Node) ([]Node, error) {
 }
 
 func (p *Parser) parseFunctionCall(self Node) (Node, error) {
-	var functionNode Token
+	var functionToken Token
 	var err error
 	switch p.currentToken().kind {
 	case Identifier:
-		functionNode, err = p.expectToken(Identifier)
+		functionToken, err = p.expectToken(Identifier)
 
 	// Special case for reserved keywords that are called as functions
 	case Keyword:
 		switch keyword := p.currentToken().str; keyword {
 		case "print":
 			p.addImport("fmt")
-			functionNode, err = p.expectToken(Keyword)
+			functionToken, err = p.expectToken(Keyword)
 		default:
 			return &NoOpNode{}, fmt.Errorf("UNREACHABLE: Unsupported keyword in function call: %q", keyword)
 		}
@@ -620,7 +620,7 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	functionCall := &FunctionCallNode{name: functionNode.str, arguments: argumentList}
+	functionCall := &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str)}
 
 	// Chained function call
 	if p.currentToken().kind == Period {
@@ -757,8 +757,14 @@ func (p *Parser) parseStatement() (Node, error) {
 				return &NoOpNode{}, err
 			}
 			return node, nil
+		case Period: // FIXME: This was added to allow chained function calls as statements, eg `a.append(1)`. Is it correct?
+			node, err := p.parseExpr()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return node, nil
 		default:
-			return  &NoOpNode{}, fmt.Errorf("TODO: Identifier follow by non-assignment in statement")
+			return  &NoOpNode{}, fmt.Errorf("Syntax error (ADD PROPER ERROR MESSAGE HERE")
 		}
 
 	case Keyword:

@@ -41,6 +41,33 @@ type TypeSlice struct{
 func (t TypeSlice) String() string { return "[]" + t.ElementType.String() }
 func (t TypeSlice) GetElementType() Type { return t.ElementType }
 
+func isAppendable(t Type) bool {
+	switch t.(type) {
+	case TypeSlice, TypeString:
+		return true
+	default:
+		return false
+	}
+}
+
+func isGeneric(t Type) bool {
+	switch t.(type) {
+	case TypeInt, TypeFloat, TypeString, TypeBool, TypeUndetermined, TypeVoid, NoCoercion, NoReturn, TypeSlice:
+		return false
+	default:
+		return true
+	}
+}
+
+// Generic types
+type TypeAny struct{}
+func (t TypeAny) String() string { return "any" }
+
+type TypeAppendable struct{}
+func (t TypeAppendable) String() string { return "appendable" }
+
+
+
 //type MapType struct {
 //	KeyType   Type
 //	ValueType Type
