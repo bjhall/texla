@@ -37,9 +37,30 @@ func ___createRange(from int, to int) []int {
     return a
 }
 `
+	case "joinIntSlice":
+		return `
+func ___joinIntSlice(slice []int, sep string) string {
+    parts := make([]string, len(slice))
+    for i, part := range slice {
+        parts[i] = strconv.Itoa(part)
+    }
+    return strings.Join(parts, sep)
+}
+`
+
+	case "joinFloatSlice":
+		return `
+func ___joinFloatSlice(slice []float64, sep string) string {
+    parts := make([]string, len(slice))
+    for i, part := range slice {
+        parts[i] = strconv.FormatFloat(part, 'f', -1, 64)
+    }
+    return strings.Join(parts, sep)
+}
+`
+
 	default:
 		panic("Unknown prelude")
-
 	}
 }
 
@@ -51,6 +72,8 @@ func preludeImports(name string) []string {
 		return []string{"strconv"}
 	case "createRange":
 		return []string{}
+	case "joinIntSlice", "joinFloatSlice":
+		return []string{"strings", "strconv"}
 	default:
 		panic("Unknown prelude")
 	}

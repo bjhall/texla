@@ -22,6 +22,14 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "var", typ: TypeAny{}},
 		},
 	},
+	"join": {
+		name:       "join",
+		returnType: TypeString{},
+		parameters: []ParameterNode{
+			ParameterNode{name: "list", typ: TypeSlice{}},
+			ParameterNode{name: "sep", typ: TypeString{}},
+		},
+	},
 }
 
 func isBuiltin(name string) bool {

@@ -48,6 +48,12 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 		if !isAppendable(containerType) {
 			tc.error(fmt.Sprintf("len() cannot be used on type %q", containerType))
 		}
+	case "join":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["list"].expr)
+		if _, isSlice := containerType.(TypeSlice); !isSlice {
+			tc.error(fmt.Sprintf("join() can only be used on slices", containerType))
+		}
+		node.(*FunctionCallNode).setArgType("list", containerType)
 
 	default:
 		panic(fmt.Sprintf("Typechecking not implemented for builtin %q", builtin.name))

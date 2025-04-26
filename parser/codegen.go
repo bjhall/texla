@@ -345,6 +345,32 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 		case TypeString:
 			return fmt.Sprintf("%s += %s", dest, g.codegenExpr(node.resolvedArgs["var"].expr, TypeString{}))
 		}
+
+	case "join":
+		g.addImport("strings")
+		listArg := node.resolvedArgs["list"]
+		switch listArg.typ.(TypeSlice).GetElementType().(type) {
+		case TypeString:
+			callStr = fmt.Sprintf("strings.Join(%s, %s)",
+				g.codegenVar(node.resolvedArgs["list"].expr.(*VarNode), NoCoercion{}),
+				g.codegenExpr(node.resolvedArgs["sep"].expr, TypeString{}),
+			)
+		case TypeInt:
+			g.addPreludeFunction("joinIntSlice")
+			callStr = fmt.Sprintf("___joinIntSlice(%s, %s)",
+				g.codegenVar(node.resolvedArgs["list"].expr.(*VarNode), NoCoercion{}),
+				g.codegenExpr(node.resolvedArgs["sep"].expr, TypeString{}),
+			)
+		case TypeFloat:
+			g.addPreludeFunction("joinFloatSlice")
+			callStr = fmt.Sprintf("___joinFloatSlice(%s, %s)",
+				g.codegenVar(node.resolvedArgs["list"].expr.(*VarNode), NoCoercion{}),
+				g.codegenExpr(node.resolvedArgs["sep"].expr, TypeString{}),
+			)
+		default:
+			panic("Joining not supported for this element type")
+		}
+
 	default:
 		panic("Unimplemented bulitin")
 	}
