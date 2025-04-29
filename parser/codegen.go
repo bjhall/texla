@@ -16,6 +16,20 @@ type Generator struct {
 	replacementCount int
 }
 
+
+func (g *Generator) nilValue(typ Type) string {
+	switch typ.(type) {
+	case TypeInt, TypeFloat:
+		return "0"
+	case TypeString:
+		return "\"\""
+	case TypeSlice:
+		return typ.String()+"{}"
+	default:
+		panic("TODO: Unimplemented nil value for type in fail")
+	}
+}
+
 func (g *Generator) addPreludeFunction(name string) {
 	for _, imp := range preludeImports(name) {
 		g.addImport(imp)
@@ -471,17 +485,7 @@ func (g *Generator) codegenFail(node *FailNode) string {
 		return fmt.Sprintf("return errors.New(%s)", failureString)
 	}
 
-	nilReturn := "nil"
-	switch returnScope.returnType.(type) {
-	case TypeInt, TypeFloat:
-		nilReturn = "0"
-	case TypeString:
-		nilReturn = "\"\""
-	case TypeSlice:
-		nilReturn = returnScope.returnType.String()+"{}"
-	default:
-		panic("TODO: Unimplemented nil value for type in fail")
-	}
+	nilReturn := g.nilValue(returnScope.returnType)
 	g.addImport("errors")
 	return fmt.Sprintf("return %s,  errors.New(%s)", nilReturn, failureString)
 }
