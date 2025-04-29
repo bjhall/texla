@@ -263,11 +263,12 @@ type FunctionNode struct {
 	parameters Node
 	body       Node
 	returnType Type
+	fallible   bool
 }
 
 func (n *FunctionNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+"Function", n.name.str)
+	fmt.Println(indentation+"Function", n.name.str, "fallible?", n.fallible)
 	n.parameters.Print(level + 1)
 	n.body.Print(level + 1)
 }
@@ -312,11 +313,12 @@ type FunctionCallNode struct {
 	isBuiltin          bool
 	resolvedArgs       map[string]ArgumentNode
 	resolvedReturnType Type
+	errorHandled       bool
 }
 
 func (n *FunctionCallNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+"FunctionCall", n.name, "builtin?", n.isBuiltin)
+	fmt.Println(indentation+"FunctionCall", n.name, "builtin?", n.isBuiltin, "error handled?", n.errorHandled)
 	if len(n.arguments) == 0 && len(n.resolvedArgs) == 0 {
 		return
 	}
@@ -490,6 +492,32 @@ func (n *ReturnNode) Type() NodeType {
 }
 
 func (n *ReturnNode) Precedence() int {
+	return 100
+}
+
+// Fail node
+type FailNode struct {
+	Node
+	expr     Node
+	typ      Type
+	function FunctionNode
+}
+
+func (n *FailNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Fail")
+	n.expr.Print(level + 1)
+}
+
+func (n *FailNode) setType(typ Type) {
+	n.typ = typ
+}
+
+func (n *FailNode) Type() NodeType {
+	return FailNodeType
+}
+
+func (n *FailNode) Precedence() int {
 	return 100
 }
 

@@ -32,6 +32,7 @@ const (
 	Whitespace
 	StringLiteral
 	Range
+	QuestionMark
 	NoToken
 	Eof
 )
@@ -69,6 +70,7 @@ func (s TokenKind) String() string {
 	case Whitespace: return "Whitespace"
 	case StringLiteral: return "StringLiteral"
 	case Range: return "Range"
+	case QuestionMark: return "QuestionMark"
 	case NoToken: return "NoToken"
 	case Eof: return "Eof"
 
@@ -101,6 +103,7 @@ const (
 	IndexedVarNodeType
 	ForeachNodeType
 	RangeNodeType
+	FailNodeType
 )
 
 
@@ -128,6 +131,7 @@ func (s NodeType) String() string {
 	case IndexedVarNodeType: return "IndexedVar"
 	case ForeachNodeType: return "Foreach"
 	case RangeNodeType: return "Range"
+	case FailNodeType: return "Fail"
 
 	default: return "???"
 	}

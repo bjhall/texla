@@ -56,6 +56,15 @@ func ___joinFloatSlice(slice []float64, sep string) string {
         parts[i] = strconv.FormatFloat(part, 'f', -1, 64)
     }
     return strings.Join(parts, sep)
+}`
+
+	case "handleError":
+		return `
+func ___handleError(err error) {
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error from main function: %q\n", err.Error());
+        os.Exit(1)
+    }
 }
 `
 
@@ -74,6 +83,8 @@ func preludeImports(name string) []string {
 		return []string{}
 	case "joinIntSlice", "joinFloatSlice":
 		return []string{"strings", "strconv"}
+	case "handleError":
+		return []string{"os"}
 	default:
 		panic("Unknown prelude")
 	}

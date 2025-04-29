@@ -8,6 +8,7 @@ type Symbol struct {
 	typ        Type
 	name       string
 	used       bool
+	fallible   bool
 	category   SymbolCategory
 	paramsNode *ParameterListNode
 }
@@ -24,6 +25,7 @@ type Scope struct {
 	parent     *Scope
 	symbols    map[string]Symbol
 	returnType Type
+	fallible   bool
 }
 
 type SymbolCategory int
@@ -33,18 +35,18 @@ const (
 	FunctionSymbol
 )
 
-func newScope(parent *Scope, parameters []ParameterNode, returnType Type) *Scope {
+func newScope(parent *Scope, parameters []ParameterNode, returnType Type, fallible bool) *Scope {
 
 	symbols := make(map[string]Symbol)
 
 	// Add function parameters to the scopes list of declared symbols
 	if parameters != nil {
 		for _, param := range parameters {
-			symbols[param.name] = Symbol{param.typ, param.name, false, VariableSymbol, &ParameterListNode{}}
+			symbols[param.name] = Symbol{param.typ, param.name, false, false, VariableSymbol, &ParameterListNode{}}
 		}
 	}
 
-	return &Scope{parent, symbols, returnType}
+	return &Scope{parent, symbols, returnType, fallible}
 }
 
 func (s *Scope) setSymbolType(name string, typ Type) error {
@@ -66,12 +68,20 @@ func (s *Scope) lookupSymbol(name string) (Symbol, bool) {
 	return s.parent.lookupSymbol(name)
 }
 
-func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, paramsNode *ParameterListNode) bool {
+func (s *Scope) createSymbol(name string, category SymbolCategory, typ Type, paramsNode *ParameterListNode, fallible bool) bool {
 	if _, exists := s.symbols[name]; exists {
 		return false
 	}
-	s.symbols[name] = Symbol{typ, name, false, category, paramsNode}
+	s.symbols[name] = Symbol{typ, name, false, fallible, category, paramsNode}
 	return true
+}
+
+func (s *Scope) closestReturningScope() *Scope {
+	rs := s
+	for rs.returnType == (NoReturn{}) {
+		rs = rs.parent
+	}
+	return rs
 }
 
 type Parser struct {
@@ -113,11 +123,11 @@ func (p *Parser) validateVariable(name string) bool {
 }
 
 func (p *Parser) createVariableInCurrentScope(name string, typ Type) bool {
-	return p.currentScope.createSymbol(name, VariableSymbol, typ, &ParameterListNode{})
+	return p.currentScope.createSymbol(name, VariableSymbol, typ, &ParameterListNode{}, false)
 }
 
-func (p *Parser) createFunctionInCurrentScope(name string, paramsNode *ParameterListNode, returnType Type) bool {
-	return p.currentScope.createSymbol(name, FunctionSymbol, returnType, paramsNode)
+func (p *Parser) createFunctionInCurrentScope(name string, paramsNode *ParameterListNode, returnType Type, fallible bool) bool {
+	return p.currentScope.createSymbol(name, FunctionSymbol, returnType, paramsNode, fallible)
 }
 
 func (p *Parser) unusedVariables() []string {
@@ -130,8 +140,8 @@ func (p *Parser) unusedVariables() []string {
 	return unused
 }
 
-func (p *Parser) newScope(parameters []ParameterNode, returnType Type) {
-	p.currentScope = newScope(p.currentScope, parameters, returnType)
+func (p *Parser) newScope(parameters []ParameterNode, returnType Type, fallible bool) {
+	p.currentScope = newScope(p.currentScope, parameters, returnType, fallible)
 }
 
 func (p *Parser) leaveScope() {
@@ -353,7 +363,7 @@ func (p *Parser) parseSliceLiteral() (Node, error) {
 	return &SliceLiteralNode{elements: elements}, nil
 }
 
-func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType Type) (Node, error) {
+func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType Type, fallible bool) (Node, error) {
 
 	_, err := p.expectToken(OpenCurly)
 	if err != nil {
@@ -361,7 +371,7 @@ func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType T
 	}
 
 	// Create new scope
-	p.newScope(parameters, returnType)
+	p.newScope(parameters, returnType, fallible)
 	defer p.leaveScope()
 
 	// Parse any statements
@@ -485,6 +495,12 @@ func (p *Parser) parseFunction() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
+	fallible := false
+	if p.currentToken().kind == QuestionMark {
+		fallible = true
+		p.consumeToken() // ?
+	}
+
 	_, err = p.expectToken(OpenParen)
 	if err != nil {
 		return &NoOpNode{}, err
@@ -511,17 +527,17 @@ func (p *Parser) parseFunction() (Node, error) {
 		returnType = TypeVoid{}
 	}
 
-	isNew := p.createFunctionInCurrentScope(functionName.str, parameterList.(*ParameterListNode), returnType)
+	isNew := p.createFunctionInCurrentScope(functionName.str, parameterList.(*ParameterListNode), returnType, fallible)
 	if !isNew {
 		return &NoOpNode{}, fmt.Errorf("Function with name %q already exists in the same scope", functionName.str)
 	}
 
-	functionBody, err := p.parseCompoundStatement(parameterList.(*ParameterListNode).parameters, returnType)
+	functionBody, err := p.parseCompoundStatement(parameterList.(*ParameterListNode).parameters, returnType, fallible)
 	if err != nil {
 		return &NoOpNode{}, err
 	}
 
-	return &FunctionNode{name: functionName, parameters: parameterList, body: functionBody, returnType: returnType}, nil
+	return &FunctionNode{name: functionName, parameters: parameterList, body: functionBody, returnType: returnType, fallible: fallible}, nil
 }
 
 func (p *Parser) parseArgumentList(self Node) ([]Node, error) {
@@ -611,7 +627,13 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	functionCall := &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str)}
+	errorHandled := false
+	if p.currentToken().kind == QuestionMark {
+		errorHandled = true
+		p.consumeToken() // ?
+	}
+	
+	functionCall := &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str), errorHandled: errorHandled}
 
 	// Chained function call
 	if p.currentToken().kind == Period {
@@ -641,6 +663,21 @@ func (p *Parser) parseReturn() (Node, error) {
 	return &ReturnNode{expr: expr}, nil
 }
 
+func (p *Parser) parseFail() (Node, error) {
+
+	_, err := p.expectToken(Keyword) // fail
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	expr, err := p.parseExpr()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	return &FailNode{expr: expr}, nil
+}
+
 func (p *Parser) parseIfStatement() (Node, error) {
 	_, err := p.expectToken(Keyword) // if
 	if err != nil {
@@ -652,7 +689,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	body, err := p.parseCompoundStatement(nil, NoReturn{})
+	body, err := p.parseCompoundStatement(nil, NoReturn{}, false)
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -665,7 +702,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		if p.currentToken().kind == Keyword && p.currentToken().str == "if" {
 			elseBody, err = p.parseIfStatement()
 		} else { // just else
-			elseBody, err = p.parseCompoundStatement(nil, NoReturn{})
+			elseBody, err = p.parseCompoundStatement(nil, NoReturn{}, false)
 		}
 		if err != nil {
 			return &NoOpNode{}, err
@@ -722,7 +759,7 @@ func (p *Parser) parseForLoop() (Node, error) {
 	}
 	controlVariable := &ParameterNode{name: variable.(*VarNode).token.str, typ: TypeUndetermined{}}
 
-	body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturn{})
+	body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturn{}, false)
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -796,12 +833,19 @@ func (p *Parser) parseStatement() (Node, error) {
 				return &NoOpNode{}, err
 			}
 			return node, nil
+
+		case "fail":
+			node, err := p.parseFail()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return node, nil
 		default:
 			return &NoOpNode{}, fmt.Errorf("TODO: Parsing of keyword %q not implemented", p.currentToken().str)
 		}
 
 	case OpenCurly:
-		node, err := p.parseCompoundStatement(nil, NoReturn{})
+		node, err := p.parseCompoundStatement(nil, NoReturn{}, false)
 		if err != nil {
 			return &NoOpNode{}, err
 		}
@@ -874,7 +918,7 @@ func (p *Parser) parseAssign() (Node, error) {
 }
 
 func Parse(tokens []Token) (Node, error) {
-	rootScope := newScope(nil, nil, NoReturn{})
+	rootScope := newScope(nil, nil, NoReturn{}, false)
 	parser := Parser{tokens, 0, 0, rootScope, make(map[string]bool)}
 
 	var functions []Node

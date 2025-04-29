@@ -127,7 +127,7 @@ func (t *Tokenizer) consumeIdentifier() Token {
 		identifierString += string(t.consume())
 	}
 	switch identifierString {
-	case "fn", "if", "for", "in", "read", "print", "return", "true", "false", "else":
+	case "fn", "if", "for", "in", "read", "print", "return", "true", "false", "else", "fail":
 		return Token{kind: Keyword, str: identifierString}
 	default:
 		return Token{kind: Identifier, str: identifierString}
@@ -240,6 +240,8 @@ func (t *Tokenizer) nextToken() (Token, error) {
 		return t.createTokenConsume(Plus, 1), nil
 	case '*':
 		return t.createTokenConsume(Mult, 1), nil
+	case '?':
+		return t.createTokenConsume(QuestionMark, 1), nil
 	case '/':
 		if t.peek(1) == '/' {
 			return t.createTokenFromString(Comment, t.consumeUntil('\n')), nil

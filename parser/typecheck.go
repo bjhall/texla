@@ -211,6 +211,16 @@ func (tc *TypeChecker) traverse(node Node) {
 	case ReturnNodeType:
 		node.(*ReturnNode).setType(tc.typecheckExpr(node.(*ReturnNode).expr))
 
+	case FailNodeType:
+		if !tc.scope.closestReturningScope().fallible {
+			tc.error("Cannot use `fail` in non-fallible function")
+		}
+		exprType := tc.typecheckExpr(node.(*FailNode).expr)
+		if exprType != (TypeString{}) {
+			tc.error("Failure expression must be a string")
+		}
+
+
 	case FunctionCallNodeType:
 		fnNode := node.(*FunctionCallNode)
 		functionName := fnNode.name
@@ -227,6 +237,15 @@ func (tc *TypeChecker) traverse(node Node) {
 					tc.error(fmt.Sprintf("%q is not a function", functionName))
 				}
 				parameters = symbol.paramsNode.parameters
+
+				// Check that errors are handled correctly
+				if symbol.fallible && !fnNode.errorHandled {
+					tc.error(fmt.Sprintf("Function %q can return an error, but it is not handled", functionName))
+				}
+				if !symbol.fallible && fnNode.errorHandled {
+					tc.error(fmt.Sprintf("Function %q is not fallible, do not put ? after the call to it", functionName))
+				}
+
 			} else if functionName == "print" {
 				// TODO: Make print a builtin
 				for _, arg := range fnNode.arguments {

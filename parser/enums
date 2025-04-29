@@ -29,6 +29,7 @@ RightArrow
 Whitespace
 StringLiteral
 Range
+QuestionMark
 NoToken
 Eof
 
@@ -55,6 +56,7 @@ ArgumentNodeType
 IndexedVarNodeType
 ForeachNodeType
 RangeNodeType
+FailNodeType
 
 -CoercionMode int
 CoercionModeDefault
