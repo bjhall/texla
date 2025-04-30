@@ -30,6 +30,12 @@ func (g *Generator) nilValue(typ Type) string {
 	}
 }
 
+func (g *Generator) getReplacementVarName(fnName string) string {
+	g.replacementCount++
+	return fmt.Sprintf("___%s_result_%d", fnName, g.replacementCount)
+}
+
+
 func (g *Generator) addPreludeFunction(name string) {
 	for _, imp := range preludeImports(name) {
 		g.addImport(imp)
@@ -372,35 +378,38 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 		// Codegen the final call
 		functionCall := fmt.Sprintf("%s(%s)", node.name, strings.Join(argumentStrings, ", "))
 
-		// Codegen prestatements for fallible functions (ie handling errors)
-		// FIXME: Refactor this mess!
-		if symbol.fallible {
-
-			if symbol.typ == (TypeVoid{}) {
-				g.addPreStatement(fmt.Sprintf("err := %s", functionCall))
-				if g.scope.fallible {
-					g.addPreStatement("if err != nil { return err }")
-				} else {
-					g.addPreludeFunction("handleError")
-					g.addPreStatement("___handleError(err)")
-				}
-				return ""
-			}
-
-			replacementVarName := fmt.Sprintf("___%s_result_%d", node.name, g.replacementCount)
-			g.replacementCount++
-
-			g.addPreStatement(fmt.Sprintf("%s, err := %s", replacementVarName, functionCall))
-			if g.scope.fallible {
-				g.addPreStatement(fmt.Sprintf("if err != nil { return %s, err }", replacementVarName))
-			} else {
-				g.addPreludeFunction("handleError")
-				g.addPreStatement("___handleError(err)")
-			}
-			return g.coerce(replacementVarName, symbol.typ, coercion, CoercionModeDefault)
+		// For call to non-fallible function, just return the call
+		if !symbol.fallible {
+			return g.coerce(functionCall, symbol.typ, coercion, CoercionModeDefault)
 		}
 
-		return g.coerce(functionCall, symbol.typ, coercion, CoercionModeDefault)
+
+		// For calls to fallible function, things becaome a bit more complicated...
+		returnScope := g.scope.closestReturningScope()
+		lhsVars := []string{"err"}
+		onErrReturnVars := []string{"err"}
+		replacementCode := ""
+		if symbol.typ != (TypeVoid{}) {
+			replacementVar := g.getReplacementVarName(node.name)
+			lhsVars = []string{replacementVar, "err"}
+			replacementCode = g.coerce(replacementVar, symbol.typ, coercion, CoercionModeDefault)
+			if returnScope.returnType != (TypeVoid{}) {
+				onErrReturnVars = []string{g.nilValue(returnScope.returnType), "err"}
+			}
+		}
+
+		// Generate error-catching function call pre-statement
+		g.addPreStatement(fmt.Sprintf("%s := %s", strings.Join(lhsVars, ", "), functionCall))
+
+		// Generate error handling prestatement
+		if returnScope.fallible {
+			g.addPreStatement(fmt.Sprintf("if err != nil { return %s }", strings.Join(onErrReturnVars, ", ")))
+		} else {
+			g.addPreludeFunction("handleNonPropagatableError")
+			g.addPreStatement("___handleNonPropagatableError(err)")
+		}
+
+		return replacementCode
 	}
 }
 

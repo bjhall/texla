@@ -58,9 +58,9 @@ func ___joinFloatSlice(slice []float64, sep string) string {
     return strings.Join(parts, sep)
 }`
 
-	case "handleError":
+	case "handleNonPropagatableError":
 		return `
-func ___handleError(err error) {
+func ___handleNonPropagatableError(err error) {
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error from main function: %q\n", err.Error());
         os.Exit(1)
@@ -83,7 +83,7 @@ func preludeImports(name string) []string {
 		return []string{}
 	case "joinIntSlice", "joinFloatSlice":
 		return []string{"strings", "strconv"}
-	case "handleError":
+	case "handleNonPropagatableError":
 		return []string{"os"}
 	default:
 		panic("Unknown prelude")
