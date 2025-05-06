@@ -54,6 +54,7 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 			tc.error(fmt.Sprintf("join() can only be used on slices", containerType))
 		}
 		node.(*FunctionCallNode).setArgType("list", containerType)
+	case "read":
 
 	default:
 		panic(fmt.Sprintf("Typechecking not implemented for builtin %q", builtin.name))
@@ -263,9 +264,22 @@ func (tc *TypeChecker) traverse(node Node) {
 			tc.error(err.Error())
 		}
 
+		if fnNode.errorBody != nil {
+			tc.traverse(fnNode.errorBody)
+		}
+
 		for _, argNode := range fnNode.resolvedArgs {
 			tc.traverse(&argNode)
 		}
+
+		if fnNode.generatorVar != (VarNode{}) {
+			controlVarType := builtins[functionName].returnType.(TypeGenerator).GetElementType()
+			fnNode.generatorBody.(*CompoundStatementNode).SetVarType(fnNode.generatorVar.token.str, controlVarType)
+		}
+		if fnNode.generatorBody != nil {
+			tc.traverse(fnNode.generatorBody)
+		}
+
 
 	case IndexedVarNodeType:
 		tc.traverse(node.(*IndexedVarNode).index)

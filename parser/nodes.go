@@ -314,6 +314,9 @@ type FunctionCallNode struct {
 	resolvedArgs       map[string]ArgumentNode
 	resolvedReturnType Type
 	errorHandled       bool
+	generatorBody      Node
+	generatorVar       VarNode
+	errorBody          Node
 }
 
 func (n *FunctionCallNode) Print(level int) {
@@ -333,6 +336,16 @@ func (n *FunctionCallNode) Print(level int) {
 			fmt.Println(indentation + "* " + argName)
 			arg.Print(level + 1)
 		}
+	}
+	
+	if n.generatorBody != nil {
+		fmt.Println(indentation + "Generator (var:"+n.generatorVar.token.str+"):")
+		n.generatorBody.Print(level + 1)
+	}
+
+	if n.errorBody != nil {
+		fmt.Println(indentation + "Error block:")
+		n.errorBody.Print(level + 1)
 	}
 }
 

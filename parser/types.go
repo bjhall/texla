@@ -49,6 +49,13 @@ type TypeSlice struct {
 func (t TypeSlice) String() string       { return "[]" + t.ElementType.String() }
 func (t TypeSlice) GetElementType() Type { return t.ElementType }
 
+type TypeGenerator struct {
+	ElementType Type
+}
+func (t TypeGenerator) String() string       { return "Generator<" + t.ElementType.String() + ">" }
+func (t TypeGenerator) GetElementType() Type { return t.ElementType }
+
+
 func isAppendable(t Type) bool {
 	switch t.(type) {
 	case TypeSlice, TypeString:
@@ -60,7 +67,7 @@ func isAppendable(t Type) bool {
 
 func isGeneric(t Type) bool {
 	switch t.(type) {
-	case TypeInt, TypeFloat, TypeString, TypeBool, TypeUndetermined, TypeVoid, NoCoercion, NoReturn, TypeSlice:
+	case TypeInt, TypeFloat, TypeString, TypeBool, TypeUndetermined, TypeVoid, NoCoercion, NoReturn, TypeSlice, TypeGenerator:
 		return false
 	default:
 		return true

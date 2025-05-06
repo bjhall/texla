@@ -631,8 +631,42 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 	if p.currentToken().kind == QuestionMark {
 		errorHandled = true
 		p.consumeToken() // ?
+		if p.currentToken().kind == OpenCurly {
+			errVariable := &ParameterNode{name: "err", typ: TypeString{}}
+			errBody, err := p.parseCompoundStatement([]ParameterNode{*errVariable}, NoReturn{}, false)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return &FunctionCallNode{name: functionToken.str, arguments: argumentList, errorHandled: true, errorBody: errBody}, nil
+		}
 	}
-	
+
+	// Special case for generator build-ins such as read()
+	if isBuiltin(functionToken.str) && p.currentToken().kind == RightArrow {
+
+		p.consumeToken() // ->
+
+		_, isGenerator := builtins[functionToken.str].returnType.(*TypeGenerator)
+		if isGenerator {
+			return &NoOpNode{}, fmt.Errorf("Cannot put -> after non-generator function %q", functionToken.str)
+		}
+
+		variable, err := p.parseVar(false)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		controlVariable := &ParameterNode{name: variable.(*VarNode).token.str, typ: TypeUndetermined{}}
+
+		body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturn{}, false)
+		//_ = p.createVariableInCurrentScope(lhsName, TypeUndetermined{})
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+
+		variableNode, _ := variable.(*VarNode)
+		return &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str), errorHandled: errorHandled, generatorVar: *variableNode, generatorBody: body}, nil
+	}
+
 	functionCall := &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str), errorHandled: errorHandled}
 
 	// Chained function call

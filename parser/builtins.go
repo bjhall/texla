@@ -4,6 +4,7 @@ type BuiltinFunc struct {
 	name       string
 	returnType Type
 	parameters []ParameterNode
+	generator  bool
 }
 
 var builtins = map[string]BuiltinFunc{
@@ -28,6 +29,15 @@ var builtins = map[string]BuiltinFunc{
 		parameters: []ParameterNode{
 			ParameterNode{name: "list", typ: TypeSlice{}},
 			ParameterNode{name: "sep", typ: TypeString{}},
+		},
+	},
+	"read": {
+		name: "read",
+		returnType: TypeGenerator{ElementType: TypeString{}},
+		generator: true,
+		parameters: []ParameterNode{
+			ParameterNode{name: "path", typ: TypeString{}},
+			ParameterNode{name: "chomp", typ: TypeBool{}, hasDefault: true, defaultValue: "true"},
 		},
 	},
 }

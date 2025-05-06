@@ -127,7 +127,7 @@ func (t *Tokenizer) consumeIdentifier() Token {
 		identifierString += string(t.consume())
 	}
 	switch identifierString {
-	case "fn", "if", "for", "in", "read", "print", "return", "true", "false", "else", "fail":
+	case "fn", "if", "for", "in", "print", "return", "true", "false", "else", "fail":
 		return Token{kind: Keyword, str: identifierString}
 	default:
 		return Token{kind: Identifier, str: identifierString}
