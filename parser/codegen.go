@@ -465,7 +465,7 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 		switch listArg.typ.(TypeSlice).GetElementType().(type) {
 		case TypeString:
 			callStr = fmt.Sprintf("strings.Join(%s, %s)",
-				g.codegenVar(node.resolvedArgs["list"].expr.(*VarNode), NoCoercion{}),
+				g.codegenExpr(node.resolvedArgs["list"].expr, NoCoercion{}),
 				g.codegenExpr(node.resolvedArgs["sep"].expr, TypeString{}),
 			)
 		case TypeInt:
