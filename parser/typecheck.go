@@ -54,7 +54,8 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 			tc.error(fmt.Sprintf("join() can only be used on slices", containerType))
 		}
 		node.(*FunctionCallNode).setArgType("list", containerType)
-	case "read":
+
+	case "split", "read":
 
 	default:
 		panic(fmt.Sprintf("Typechecking not implemented for builtin %q", builtin.name))

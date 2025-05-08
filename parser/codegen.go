@@ -101,6 +101,7 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 				return fmt.Sprintf("int(%s)", content)
 			}
 		case TypeString:
+			g.addImport("strconv")
 			return fmt.Sprintf("strconv.FormatFloat(%s, 'f', -1, 64)", content)
 		case TypeBool:
 			return fmt.Sprintf("%s != 0", content)
@@ -484,6 +485,12 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			panic("Joining not supported for this element type")
 		}
 
+	case "split":
+		g.addImport("strings")
+		callStr = fmt.Sprintf("strings.Split(%s, %s)",
+			g.codegenExpr(node.resolvedArgs["string"].expr, TypeString{}),
+			g.codegenExpr(node.resolvedArgs["sep"].expr, TypeString{}),
+		)
 	case "read":
 		g.addImport("os")
 		g.addImport("bufio")

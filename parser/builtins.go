@@ -31,6 +31,14 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "sep", typ: TypeString{}},
 		},
 	},
+	"split": {
+		name:       "split",
+		returnType: TypeSlice{ElementType: TypeString{}},
+		parameters: []ParameterNode{
+			ParameterNode{name: "string", typ: TypeString{}},
+			ParameterNode{name: "sep", typ: TypeString{}},
+		},
+	},
 	"read": {
 		name: "read",
 		returnType: TypeGenerator{ElementType: TypeString{}},
