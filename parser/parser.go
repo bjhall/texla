@@ -781,6 +781,7 @@ func (p *Parser) parseForLoop() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
+	_, isRange := iterator.(*RangeNode)
 
 	_, err = p.expectToken(RightArrow) // ->
 	if err != nil {
@@ -792,14 +793,34 @@ func (p *Parser) parseForLoop() (Node, error) {
 		return &NoOpNode{}, err
 	}
 	controlVariable := &ParameterNode{name: variable.(*VarNode).token.str, typ: TypeUndetermined{}}
+	forParams := []ParameterNode{*controlVariable}
 
-	body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturn{}, false)
+	// Parse optional index variable
+	var idxVariable Node
+	hasIdx := false
+	if p.currentToken().kind == Comma && !isRange{
+		p.consumeToken() // ,
+		idxVariable, err = p.parseVar(false)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		hasIdx = true
+		idxVariableParam := &ParameterNode{name: idxVariable.(*VarNode).token.str, typ: TypeInt{}}
+		forParams = append(forParams, *idxVariableParam)
+	}
+
+	body, err := p.parseCompoundStatement(forParams, NoReturn{}, false)
 	if err != nil {
 		return &NoOpNode{}, err
 	}
 
 	variableNode, _ := variable.(*VarNode)
-	return &ForeachNode{iterator: iterator, variable: *variableNode, body: body}, nil
+	if hasIdx {
+		idxVariableNode, _ := idxVariable.(*VarNode)
+		return &ForeachNode{iterator: iterator, variable: *variableNode, idxVariable: *idxVariableNode, body: body, hasIdx: hasIdx}, nil
+	} else {
+		return &ForeachNode{iterator: iterator, variable: *variableNode, idxVariable: VarNode{}, body: body, hasIdx: hasIdx}, nil
+	}
 }
 
 func (p *Parser) parseStatement() (Node, error) {

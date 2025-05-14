@@ -586,7 +586,12 @@ func (g *Generator) codegenForeach(node *ForeachNode) string {
 			g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
 		)
 	} else { // Foreach loop with iterator: `for list -> x`
-		return fmt.Sprintf("for _, %s := range %s %s",
+		idxVarName := "_"
+		if node.hasIdx {
+			idxVarName = node.idxVariable.token.str
+		}
+		return fmt.Sprintf("for %s, %s := range %s %s",
+			idxVarName,
 			g.codegenVar(&node.variable, NoCoercion{}),
 			g.codegenExpr(node.iterator, NoCoercion{}),
 			g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),

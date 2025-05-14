@@ -569,9 +569,11 @@ func (n *IfNode) Precedence() int {
 // Foreach node
 type ForeachNode struct {
 	Node
-	iterator Node
-	variable VarNode
-	body     Node
+	iterator    Node
+	variable    VarNode
+	idxVariable VarNode
+	hasIdx      bool
+	body        Node
 }
 
 func (n *ForeachNode) Print(level int) {
@@ -580,6 +582,10 @@ func (n *ForeachNode) Print(level int) {
 	n.iterator.Print(level + 1)
 	fmt.Println(indentation + "Foreach, control variable:")
 	n.variable.Print(level + 1)
+	if n.hasIdx {
+		fmt.Println(indentation + "Foreach, index variable:")
+		n.idxVariable.Print(level + 1)
+	}
 	fmt.Println(indentation + "Foreach, body:")
 	n.body.Print(level + 1)
 }
