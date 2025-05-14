@@ -12,10 +12,12 @@ type Generator struct {
 	imports             map[string]bool
 	preludes            map[string]bool
 	initStatements      []string
+	finalStatements     []string
 	preStatements       []string
 	postStatements      []string
 	replacementCount    int
 	ignorePreStatements bool
+	tmpVarCount         int
 }
 
 
@@ -51,6 +53,10 @@ func (g *Generator) addImport(name string) {
 
 func (g *Generator) addInitStatement(node string) {
 	g.initStatements = append(g.initStatements, node)
+}
+
+func (g *Generator) addFinalStatement(node string) {
+	g.finalStatements = append(g.finalStatements, node)
 }
 
 func (g *Generator) addPreStatement(node string) {
@@ -279,6 +285,14 @@ func (g *Generator) codegenCompoundStatement(node *CompoundStatementNode) string
 	}
 	g.initStatements = nil
 
+	// Collect final statements before codegening the body, will be added to the end later.
+	// This is necessary to avoid it adding the final statements to any child scopes.
+	var finals []string
+	for _, finalStatement := range g.finalStatements {
+		finals = append(finals, g.indent(finalStatement))
+	}
+	g.finalStatements = nil
+
 	for _, child := range node.children {
 		if !g.ignorePreStatements {
 			g.preStatements = nil
@@ -305,8 +319,10 @@ func (g *Generator) codegenCompoundStatement(node *CompoundStatementNode) string
 		g.postStatements = nil
 	}
 
-	statementsString := strings.Join(statements, "\n")
+	// Add final statements to the end of the scope
+	statements = append(statements, finals...)
 
+	statementsString := strings.Join(statements, "\n")
 	g.indentLevel--
 	g.scope = prevScope
 
@@ -492,23 +508,52 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			g.codegenExpr(node.resolvedArgs["sep"].expr, TypeString{}),
 		)
 	case "read":
+		g.tmpVarCount++
 		g.addImport("os")
 		g.addImport("bufio")
 		path := g.codegenExpr(node.resolvedArgs["path"].expr, TypeString{})
 		genVar :=  g.codegenVar(&node.generatorVar, NoCoercion{})
-		g.addInitStatement(fmt.Sprintf("%s := ___scanner.Text()", genVar))
+		genVarSymbol, found := node.generatorBody.(*CompoundStatementNode).scope.lookupSymbol(genVar)
+		if !found {
+			panic("UNREACHABLE")
+		}
+
+		switch genVarSymbol.typ.(type) {
+		case TypeString:
+			g.addInitStatement(fmt.Sprintf("%s := ___scanner%d.Text()", genVar, g.tmpVarCount))
+			g.addInitStatement(fmt.Sprintf("if !___chomp%d { %s=%s+\"\\n\" }", g.tmpVarCount, genVar, genVar))
+		case TypeSlice:
+			g.addImport("strings")
+			g.addInitStatement(fmt.Sprintf("___string%d := ___scanner%d.Text()", g.tmpVarCount, g.tmpVarCount))
+			g.addInitStatement(fmt.Sprintf("if !___chomp%d { ___string%d += \"\\n\" }", g.tmpVarCount, g.tmpVarCount))
+			g.addInitStatement(fmt.Sprintf("%s := strings.Split(___string%d, %s)", genVar, g.tmpVarCount, g.codegenStringLiteral(node.resolvedArgs["sep"].expr.(*StringLiteralNode), NoCoercion{})))
+		}
+
 		g.addInitStatement(fmt.Sprintf("_ = %s", genVar))
+
+		idxInitCode := ""
+		if node.generatorHasIdx {
+			genIdxVar := g.codegenVar(&node.generatorIdxVar, NoCoercion{})
+
+			// This might generate slightly non-optimal go code, but is done to avoid
+			// declaring the index variable outside the loop scope
+			idxInitCode = fmt.Sprintf("___counter%d := 0", g.tmpVarCount)
+			g.addInitStatement(fmt.Sprintf("%s := ___counter%d", genIdxVar, g.tmpVarCount))
+			g.addFinalStatement(fmt.Sprintf("___counter%d++", g.tmpVarCount))
+		}
 
 		body := g.codegenCompoundStatement(node.generatorBody.(*CompoundStatementNode))
 		readCodeList := []string{
-			fmt.Sprintf("___file, err := os.Open(%s)", path),
+			fmt.Sprintf("___file%d, err := os.Open(%s)", g.tmpVarCount, path),
 			g.indent("if err != nil {"),
 			g.indent("    panic(\"Open fail\")"),
 			g.indent("}"),
-			g.indent("defer ___file.Close()"),
-
-			g.indent("___scanner := bufio.NewScanner(___file)"),
-			g.indent("for ___scanner.Scan()"),
+			g.indent(fmt.Sprintf("defer ___file%d.Close()", g.tmpVarCount)),
+			g.indent(idxInitCode),
+			g.indent(fmt.Sprintf("___scanner%d := bufio.NewScanner(___file%d)", g.tmpVarCount, g.tmpVarCount)),
+			g.indent(fmt.Sprintf("___chomp%d := false", g.tmpVarCount)),
+			g.indent(fmt.Sprintf("if %s { ___chomp%d = true }", g.codegenExpr(node.resolvedArgs["chomp"].expr, TypeBool{}), g.tmpVarCount)),
+			g.indent(fmt.Sprintf("for ___scanner%d.Scan()", g.tmpVarCount)),
 		}
 		readCode := fmt.Sprintf("%s %s", strings.Join(readCodeList, "\n"), body)
 
@@ -676,7 +721,7 @@ func (g *Generator) codegenProgram(node Node) string {
 }
 
 func GenerateCode(root Node) (string, error) {
-	generator := Generator{0, nil, []string{}, make(map[string]bool), make(map[string]bool), []string{}, []string{}, []string{}, 0, false}
+	generator := Generator{0, nil, []string{}, make(map[string]bool), make(map[string]bool), []string{}, []string{}, []string{}, []string{}, 0, false, 0}
 	code := generator.codegenProgram(root)
 
 	if len(generator.errors) > 0 {

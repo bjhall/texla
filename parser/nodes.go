@@ -316,6 +316,8 @@ type FunctionCallNode struct {
 	errorHandled       bool
 	generatorBody      Node
 	generatorVar       VarNode
+	generatorHasIdx    bool
+	generatorIdxVar    VarNode
 	errorBody          Node
 }
 

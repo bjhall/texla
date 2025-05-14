@@ -656,15 +656,34 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 			return &NoOpNode{}, err
 		}
 		controlVariable := &ParameterNode{name: variable.(*VarNode).token.str, typ: TypeUndetermined{}}
+		generatorParams := []ParameterNode{*controlVariable}
 
-		body, err := p.parseCompoundStatement([]ParameterNode{*controlVariable}, NoReturn{}, false)
+		// Parse optional index variable
+		var idxVariable Node
+		hasIdx := false
+		if p.currentToken().kind == Comma {
+			p.consumeToken() // ,
+			idxVariable, err = p.parseVar(false)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			hasIdx = true
+			idxVariableParam := &ParameterNode{name: idxVariable.(*VarNode).token.str, typ: TypeInt{}}
+			generatorParams = append(generatorParams, *idxVariableParam)
+		}
+
+		body, err := p.parseCompoundStatement(generatorParams, NoReturn{}, false)
 		//_ = p.createVariableInCurrentScope(lhsName, TypeUndetermined{})
 		if err != nil {
 			return &NoOpNode{}, err
 		}
 
 		variableNode, _ := variable.(*VarNode)
-		return &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str), errorHandled: errorHandled, generatorVar: *variableNode, generatorBody: body}, nil
+		idxVariableNode := &VarNode{}
+		if hasIdx {
+			idxVariableNode = idxVariable.(*VarNode)
+		}
+		return &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str), errorHandled: errorHandled, generatorVar: *variableNode, generatorBody: body, generatorHasIdx: hasIdx, generatorIdxVar: *idxVariableNode}, nil
 	}
 
 	functionCall := &FunctionCallNode{name: functionToken.str, arguments: argumentList, isBuiltin: isBuiltin(functionToken.str), errorHandled: errorHandled}

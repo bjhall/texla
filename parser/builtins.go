@@ -41,11 +41,12 @@ var builtins = map[string]BuiltinFunc{
 	},
 	"read": {
 		name: "read",
-		returnType: TypeGenerator{ElementType: TypeString{}},
+		returnType: TypeGenerator{ElementType: TypeUndetermined{}},
 		generator: true,
 		parameters: []ParameterNode{
 			ParameterNode{name: "path", typ: TypeString{}},
 			ParameterNode{name: "chomp", typ: TypeBool{}, hasDefault: true, defaultValue: "true"},
+			ParameterNode{name: "sep", typ: TypeString{}, hasDefault: true, defaultValue: ""},
 		},
 	},
 }

@@ -54,9 +54,18 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 			tc.error(fmt.Sprintf("join() can only be used on slices", containerType))
 		}
 		node.(*FunctionCallNode).setArgType("list", containerType)
-
-	case "split", "read":
-
+	case "read":
+		separator, sepIsString :=fnNode.resolvedArgs["sep"].expr.(*StringLiteralNode)
+		if !sepIsString {
+			tc.error(fmt.Sprintf("sep argument for read() must be string literal"))
+		}
+		if separator.token.str == "" {
+			returnType = TypeString{}
+		} else {
+			returnType = TypeSlice{ElementType: TypeString{}}
+		}
+	case "split":
+		// Do nothing?
 	default:
 		panic(fmt.Sprintf("Typechecking not implemented for builtin %q", builtin.name))
 	}
@@ -274,7 +283,8 @@ func (tc *TypeChecker) traverse(node Node) {
 		}
 
 		if fnNode.generatorVar != (VarNode{}) {
-			controlVarType := builtins[functionName].returnType.(TypeGenerator).GetElementType()
+			//controlVarType := builtins[functionName].returnType.(TypeGenerator).GetElementType()
+			controlVarType := tc.typecheckBuiltin(node)
 			fnNode.generatorBody.(*CompoundStatementNode).SetVarType(fnNode.generatorVar.token.str, controlVarType)
 		}
 		if fnNode.generatorBody != nil {
