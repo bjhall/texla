@@ -67,7 +67,16 @@ func ___handleNonPropagatableError(err error) {
     }
 }
 `
-
+	case "regexMatch":
+		return `
+func ___regexMatch(haystack string, regexpStr string) bool {
+    matched, err := regexp.MatchString(regexpStr, haystack)
+    if err != nil {
+        return false
+    }
+    return matched
+}
+`
 	default:
 		panic("Unknown prelude")
 	}
@@ -85,6 +94,8 @@ func preludeImports(name string) []string {
 		return []string{"strings", "strconv"}
 	case "handleNonPropagatableError":
 		return []string{"os"}
+	case "regexMatch":
+		return []string{"regexp"}
 	default:
 		panic("Unknown prelude")
 	}
