@@ -559,9 +559,9 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 
 			// This might generate slightly non-optimal go code, but is done to avoid
 			// declaring the index variable outside the loop scope
-			idxInitCode = fmt.Sprintf("___counter%d := 0", g.tmpVarCount)
+			idxInitCode = fmt.Sprintf("___counter%d := -1", g.tmpVarCount)
+			g.addInitStatement(fmt.Sprintf("___counter%d++", g.tmpVarCount))
 			g.addInitStatement(fmt.Sprintf("%s := ___counter%d", genIdxVar, g.tmpVarCount))
-			g.addFinalStatement(fmt.Sprintf("___counter%d++", g.tmpVarCount))
 		}
 
 		body := g.codegenCompoundStatement(node.generatorBody.(*CompoundStatementNode))
