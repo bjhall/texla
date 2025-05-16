@@ -127,6 +127,13 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 		default:
 			panic("Unimplemented coercion")
 		}
+	case TypeSlice:
+		switch to.(type) {
+		case TypeBool:
+			return fmt.Sprintf("len(%s) > 0", content)
+		default:
+			panic("Unimplemented coercion for slice")
+		}
 	default:
 		panic("Unimplemented coercion")
 	}
