@@ -510,6 +510,42 @@ func (n *ReturnNode) Precedence() int {
 	return 100
 }
 
+// Continue node
+type ContinueNode struct {
+	Node
+}
+
+func (n *ContinueNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Continue")
+}
+
+func (n *ContinueNode) Type() NodeType {
+	return ContinueNodeType
+}
+
+func (n *ContinueNode) Precedence() int {
+	return 100
+}
+
+// Break node
+type BreakNode struct {
+	Node
+}
+
+func (n *BreakNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation + "Break")
+}
+
+func (n *BreakNode) Type() NodeType {
+	return BreakNodeType
+}
+
+func (n *BreakNode) Precedence() int {
+	return 100
+}
+
 // Fail node
 type FailNode struct {
 	Node

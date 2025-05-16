@@ -104,6 +104,8 @@ const (
 	ForeachNodeType
 	RangeNodeType
 	FailNodeType
+	ContinueNodeType
+	BreakNodeType
 )
 
 
@@ -132,6 +134,8 @@ func (s NodeType) String() string {
 	case ForeachNodeType: return "Foreach"
 	case RangeNodeType: return "Range"
 	case FailNodeType: return "Fail"
+	case ContinueNodeType: return "Continue"
+	case BreakNodeType: return "Break"
 
 	default: return "???"
 	}

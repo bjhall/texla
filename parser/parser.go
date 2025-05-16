@@ -914,6 +914,12 @@ func (p *Parser) parseStatement() (Node, error) {
 				return &NoOpNode{}, err
 			}
 			return node, nil
+		case "continue":
+			p.consumeToken()
+			return &ContinueNode{}, nil
+		case "break":
+			p.consumeToken()
+			return &BreakNode{}, nil
 		default:
 			return &NoOpNode{}, fmt.Errorf("TODO: Parsing of keyword %q not implemented", p.currentToken().str)
 		}

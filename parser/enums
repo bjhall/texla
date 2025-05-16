@@ -57,6 +57,8 @@ IndexedVarNodeType
 ForeachNodeType
 RangeNodeType
 FailNodeType
+ContinueNodeType
+BreakNodeType
 
 -CoercionMode int
 CoercionModeDefault

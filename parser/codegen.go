@@ -684,6 +684,10 @@ func (g *Generator) codegenStatement(node Node) string {
 		return g.codegenIf(node.(*IfNode))
 	case ForeachNodeType:
 		return g.codegenForeach(node.(*ForeachNode))
+	case ContinueNodeType:
+		return "continue"
+	case BreakNodeType:
+		return "break"
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in statement", node.Type())
 		panic("")
