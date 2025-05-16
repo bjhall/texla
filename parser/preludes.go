@@ -77,6 +77,21 @@ func ___regexMatch(haystack string, regexpStr string) bool {
     return matched
 }
 `
+
+	case "regexCapture":
+		return `
+func ___regexCapture(haystack string, regexpStr string) []string {
+    regex, err := regexp.Compile(regexpStr)
+    if err != nil {
+        return []string{}
+    }
+    matches := regex.FindStringSubmatch(haystack)
+    if len(matches) > 0 {
+        return matches[1:]
+    }
+    return matches
+}
+`
 	default:
 		panic("Unknown prelude")
 	}
@@ -94,7 +109,7 @@ func preludeImports(name string) []string {
 		return []string{"strings", "strconv"}
 	case "handleNonPropagatableError":
 		return []string{"os"}
-	case "regexMatch":
+	case "regexMatch", "regexCapture":
 		return []string{"regexp"}
 	default:
 		panic("Unknown prelude")

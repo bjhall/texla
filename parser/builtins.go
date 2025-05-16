@@ -57,6 +57,14 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "regex", typ: TypeString{}},
 		},
 	},
+	"capture": {
+		name: "capture",
+		returnType: TypeSlice{ElementType: TypeString{}},
+		parameters: []ParameterNode{
+			ParameterNode{name: "haystack", typ: TypeString{}},
+			ParameterNode{name: "regex", typ: TypeString{}},
+		},
+	},
 }
 
 func isBuiltin(name string) bool {

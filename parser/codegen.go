@@ -515,6 +515,13 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			g.codegenExpr(node.resolvedArgs["regex"].expr, TypeString{}),
 		)
 
+	case "capture":
+		g.addPreludeFunction("regexCapture")
+		callStr = fmt.Sprintf("___regexCapture(%s, %s)",
+			g.codegenExpr(node.resolvedArgs["haystack"].expr, TypeString{}),
+			g.codegenExpr(node.resolvedArgs["regex"].expr, TypeString{}),
+		)
+
 	case "read":
 		g.tmpVarCount++
 		g.addImport("os")
