@@ -538,6 +538,13 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			g.codegenExpr(node.resolvedArgs["regex"].expr, TypeString{}),
 		)
 
+	case "find":
+		g.addPreludeFunction("regexFind")
+		callStr = fmt.Sprintf("___regexFind(%s, %s)",
+			g.codegenExpr(node.resolvedArgs["haystack"].expr, TypeString{}),
+			g.codegenExpr(node.resolvedArgs["regex"].expr, TypeString{}),
+		)
+
 	case "read":
 		g.tmpVarCount++
 		g.addImport("os")
@@ -589,6 +596,12 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 		readCode := fmt.Sprintf("%s %s", strings.Join(readCodeList, "\n"), body)
 
 		return readCode
+
+	case "slurp":
+		g.addPreludeFunction("slurpFile")
+		callStr = fmt.Sprintf("___slurpFile(%s)",
+			g.codegenExpr(node.resolvedArgs["path"].expr, TypeString{}),
+		)
 
 	default:
 		panic("Unimplemented bulitin")

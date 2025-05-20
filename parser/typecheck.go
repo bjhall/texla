@@ -64,7 +64,7 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 		} else {
 			returnType = TypeSlice{ElementType: TypeString{}}
 		}
-	case "split", "match", "capture":
+	case "split", "match", "capture", "find", "slurp":
 		// Do nothing?
 	default:
 		panic(fmt.Sprintf("Typechecking not implemented for builtin %q", builtin.name))

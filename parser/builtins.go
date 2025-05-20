@@ -49,6 +49,13 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "sep", typ: TypeString{}, hasDefault: true, defaultValue: ""},
 		},
 	},
+	"slurp": {
+		name: "slurp",
+		returnType: TypeString{},
+		parameters: []ParameterNode{
+			ParameterNode{name: "path", typ: TypeString{}},
+		},
+	},
 	"match": {
 		name: "match",
 		returnType: TypeBool{},
@@ -59,6 +66,14 @@ var builtins = map[string]BuiltinFunc{
 	},
 	"capture": {
 		name: "capture",
+		returnType: TypeSlice{ElementType: TypeString{}},
+		parameters: []ParameterNode{
+			ParameterNode{name: "haystack", typ: TypeString{}},
+			ParameterNode{name: "regex", typ: TypeString{}},
+		},
+	},
+	"find": {
+		name: "find",
 		returnType: TypeSlice{ElementType: TypeString{}},
 		parameters: []ParameterNode{
 			ParameterNode{name: "haystack", typ: TypeString{}},

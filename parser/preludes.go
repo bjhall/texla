@@ -92,6 +92,30 @@ func ___regexCapture(haystack string, regexpStr string) []string {
     return matches
 }
 `
+
+	case "regexFind":
+		return `
+func ___regexFind(haystack string, regexpStr string) []string {
+    regex, err := regexp.Compile(regexpStr)
+    if err != nil {
+        return []string{}
+    }
+    matches := regex.FindAllString(haystack, -1)
+    return matches
+}
+`
+
+	case "slurpFile":
+		return `
+func ___slurpFile(path string) string {
+    b, err := os.ReadFile(path)
+    if err != nil {
+        panic("Cannot read file")
+    }
+    return string(b)
+}
+`
+
 	default:
 		panic("Unknown prelude")
 	}
@@ -107,9 +131,9 @@ func preludeImports(name string) []string {
 		return []string{}
 	case "joinIntSlice", "joinFloatSlice":
 		return []string{"strings", "strconv"}
-	case "handleNonPropagatableError":
+	case "handleNonPropagatableError", "slurpFile":
 		return []string{"os"}
-	case "regexMatch", "regexCapture":
+	case "regexMatch", "regexCapture", "regexFind":
 		return []string{"regexp"}
 	default:
 		panic("Unknown prelude")
