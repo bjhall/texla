@@ -170,6 +170,12 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 			tc.error("The to value of a range must be integer")
 		}
 		return TypeSlice{ElementType: TypeInt{}}
+	case AssignNodeType:
+		if node.(*AssignNode).expression == false {
+			panic("Typechecking non-exression assignment")
+		}
+		return tc.typecheckExpr(node.(*AssignNode).right)
+
 	default:
 		fmt.Println("TODO: Typechecking not implemented for", node.Type())
 		os.Exit(1)

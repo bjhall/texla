@@ -6,7 +6,7 @@ import (
 )
 
 type Generator struct {
-	indentLevel int
+	indentLevel         int
 	scope               *Scope
 	errors              []string
 	imports             map[string]bool
@@ -253,6 +253,15 @@ func (g *Generator) codegenWithParens(node Node, parent Node, coercion Type) str
 		return "(" + result + ")"
 	}
 	return result
+}
+
+func (g *Generator) codegenAssignExpr(node *AssignNode, coercion Type) string {
+	if !node.expression {
+		panic("Assignment not expression")
+	}
+	preAssignment := g.codegenAssign(node)
+	g.addPreStatement(preAssignment)
+	return g.codegenVar(node.left.(*VarNode), coercion)
 }
 
 func (g *Generator) codegenAssign(node *AssignNode) string {
@@ -619,7 +628,7 @@ func (g *Generator) codegenFail(node *FailNode) string {
 
 func (g *Generator) codegenIf(node *IfNode) string {
 	coerceType := node.compType
-	if node.comp.Type() == VarNodeType {
+	if node.comp.Type() == VarNodeType || node.comp.Type() == AssignNodeType {
 		coerceType = TypeBool{}
 	}
 
@@ -631,10 +640,19 @@ func (g *Generator) codegenIf(node *IfNode) string {
 		elseCode = " else " + g.codegenIf(node.elseBody.(*IfNode))
 	}
 
+	comparison := g.codegenExpr(node.comp, coerceType)
+
+	// Assignments in if statements generage prestatements that need to be added before the if statement
+	prestatements := strings.Join(g.preStatements, "\n")
+	g.preStatements = nil
+
+	body := g.codegenCompoundStatement(node.body.(*CompoundStatementNode))
 	return fmt.Sprintf(
-		"if %s %s%s",
-		g.codegenExpr(node.comp, coerceType),
-		g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
+		"%s\n%s %s %s%s",
+		prestatements,
+		g.indent("if"),
+		comparison,
+		body,
 		elseCode,
 	)
 }
@@ -717,6 +735,8 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 	case RangeNodeType:
 		g.addPreludeFunction("createRange")
 		return fmt.Sprintf("___createRange(%s, %s)", g.codegenExpr(node.(*RangeNode).from, TypeInt{}), g.codegenExpr(node.(*RangeNode).to, TypeInt{}))
+	case AssignNodeType:
+		return g.codegenAssignExpr(node.(*AssignNode), coercion)
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in expression", node.Type())
 		panic("")

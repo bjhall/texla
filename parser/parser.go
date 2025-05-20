@@ -194,6 +194,15 @@ func (p *Parser) parseComparison() (Node, error) {
 }
 
 func (p *Parser) parseTerm() (Node, error) {
+
+	// If nexttoken is a `=`, parse as assignment expression
+	if p.peek(1).kind == Assign {
+		node, err := p.parseAssign(true)
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		return node, nil
+	}
 	node, err := p.parseFactor()
 	if err != nil {
 		return &NoOpNode{}, err
@@ -737,7 +746,7 @@ func (p *Parser) parseIfStatement() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	comp, err := p.parseComparison()
+	comp, err := p.parseExpr()
 	if err != nil {
 		return &NoOpNode{}, err
 	}
@@ -848,7 +857,7 @@ func (p *Parser) parseStatement() (Node, error) {
 	case Identifier:
 		switch p.peek(1).kind {
 		case Assign:
-			node, err := p.parseAssign()
+			node, err := p.parseAssign(false)
 			if err != nil {
 				return &NoOpNode{}, err
 			}
@@ -967,7 +976,7 @@ func (p *Parser) parseVar(checkIfDeclared bool) (Node, error) {
 
 }
 
-func (p *Parser) parseAssign() (Node, error) {
+func (p *Parser) parseAssign(asExpr bool) (Node, error) {
 	left, err := p.parseVar(false)
 	if err != nil {
 		return &NoOpNode{}, err
@@ -981,20 +990,30 @@ func (p *Parser) parseAssign() (Node, error) {
 	if err != nil {
 		return &NoOpNode{}, err
 	}
-	right, err := p.parseExpr()
-	if err != nil {
-		return &NoOpNode{}, err
-	}
-	if p.currentToken().kind == Range {
-		// TODO: Factor this stuff out to a parseRange that takes the "from" node as an argument
-		rangeToken := p.consumeToken() // ..
-		end, err := p.parseExpr()
+	var right Node
+
+	// For assignment expressions, only allow a primary on the rhs
+	if asExpr {
+		right, err = p.parsePrimary()
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		return &AssignNode{left: left, tok: token, right: &RangeNode{token: rangeToken, from: right, to: end, step: 1}, declaration: !exists}, nil
+	} else {
+		right, err = p.parseExpr()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		if p.currentToken().kind == Range {
+			// TODO: Factor this stuff out to a parseRange that takes the "from" node as an argument
+			rangeToken := p.consumeToken() // ..
+			end, err := p.parseExpr()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return &AssignNode{left: left, tok: token, right: &RangeNode{token: rangeToken, from: right, to: end, step: 1}, declaration: !exists}, nil
+		}
 	}
-	return &AssignNode{left: left, tok: token, right: right, declaration: !exists}, nil
+	return &AssignNode{left: left, tok: token, right: right, declaration: !exists, expression: asExpr}, nil
 }
 
 func Parse(tokens []Token) (Node, error) {

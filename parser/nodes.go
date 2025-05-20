@@ -206,15 +206,17 @@ type AssignNode struct {
 	tok         Token
 	right       Node
 	declaration bool
+	expression  bool
 }
 
 func (n *AssignNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	if n.declaration {
-		fmt.Println(indentation + "VarDeclaration")
+		fmt.Println(indentation + "VarDeclaration", "Expr:", n.expression)
 	} else {
-		fmt.Println(indentation + "VarAssignment")
+		fmt.Println(indentation + "VarAssignment", "Expr:", n.expression)
 	}
+
 	n.left.Print(level + 1)
 	n.right.Print(level + 1)
 }
