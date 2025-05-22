@@ -169,9 +169,26 @@ func (p *Parser) expectToken(kind TokenKind) (Token, error) {
 }
 
 func (p *Parser) parseExpr() (Node, error) {
+	node, err := p.parseLogic()
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+	return node, nil
+}
+
+func (p *Parser) parseLogic() (Node, error) {
 	node, err := p.parseComparison()
 	if err != nil {
 		return &NoOpNode{}, err
+	}
+
+	for p.currentToken().kind == LogicAnd || p.currentToken().kind == LogicOr {
+		opToken := p.consumeToken()
+		right, err := p.parseComparison()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+		node = &BinOpNode{left: node, op: opToken, right: right}
 	}
 	return node, nil
 }

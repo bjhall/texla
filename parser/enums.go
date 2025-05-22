@@ -33,6 +33,8 @@ const (
 	StringLiteral
 	Range
 	QuestionMark
+	LogicAnd
+	LogicOr
 	NoToken
 	Eof
 )
@@ -71,6 +73,8 @@ func (s TokenKind) String() string {
 	case StringLiteral: return "StringLiteral"
 	case Range: return "Range"
 	case QuestionMark: return "QuestionMark"
+	case LogicAnd: return "LogicAnd"
+	case LogicOr: return "LogicOr"
 	case NoToken: return "NoToken"
 	case Eof: return "Eof"
 

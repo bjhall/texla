@@ -264,6 +264,16 @@ func (t *Tokenizer) nextToken() (Token, error) {
 			return t.createTokenConsume(Equal, 2), nil
 		}
 		return t.createTokenConsume(Assign, 1), nil
+	case '&':
+		if t.peek(1) == '&' {
+			return t.createTokenConsume(LogicAnd, 2), nil
+		}
+		return Token{}, fmt.Errorf("Single & token not yet suppoerted")
+	case '|':
+		if t.peek(1) == '|' {
+			return t.createTokenConsume(LogicOr, 2), nil
+		}
+		return Token{}, fmt.Errorf("Single | token not yet suppoerted")
 	case '!':
 		if t.peek(1) == '=' {
 			return t.createTokenConsume(NotEqual, 2), nil
