@@ -3,6 +3,7 @@
 /// OUT = Name: test.person
 /// OUT = Domain: email
 /// OUT = TLD: com
+/// OUT = 1234560123 [1 1]
 
 fn double(x int) -> int {
    return x * 2
@@ -29,4 +30,9 @@ fn main() {
    if matches = string.capture("HELLO") {
       print("This should not be printed")
    }
+
+    numbers = "1234560123"
+    if ones = numbers.find("1") && ones.len() == 2 {
+        print(numbers, ones)
+    }
 }

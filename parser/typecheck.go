@@ -174,6 +174,12 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		if node.(*AssignNode).expression == false {
 			panic("Typechecking non-exression assignment")
 		}
+		lhs := node.(*AssignNode).left
+		lhsSymbol, found := tc.scope.lookupSymbol(lhs.(*VarNode).token.str)
+		if found && lhsSymbol.typ.String() == "Undetermined" {
+			rhsType := tc.typecheckExpr(node.(*AssignNode).right)
+			tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
+		}
 		return tc.typecheckExpr(node.(*AssignNode).right)
 
 	default:
@@ -211,19 +217,19 @@ func (tc *TypeChecker) traverse(node Node) {
 		tc.traverse(node.(*IfNode).elseBody)
 
 	case AssignNodeType:
-		lhs := node.(*AssignNode).left
-		rhs := node.(*AssignNode).right
+		if !node.(*AssignNode).expression {
+			lhs := node.(*AssignNode).left
+			rhs := node.(*AssignNode).right
 
-		lhsSymbol, found := tc.scope.lookupSymbol(lhs.(*VarNode).token.str)
-
-		if found && lhsSymbol.typ.String() == "Undetermined" {
-			rhsType := tc.typecheckExpr(rhs)
-			tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
-		} else {
-			// Do nothing?
+			lhsSymbol, found := tc.scope.lookupSymbol(lhs.(*VarNode).token.str)
+			if found && lhsSymbol.typ.String() == "Undetermined" {
+				rhsType := tc.typecheckExpr(rhs)
+				tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
+			} else {
+				// Do nothing?
+			}
+			tc.traverse(rhs)
 		}
-
-		tc.traverse(rhs)
 
 	case ReturnNodeType:
 		node.(*ReturnNode).setType(tc.typecheckExpr(node.(*ReturnNode).expr))

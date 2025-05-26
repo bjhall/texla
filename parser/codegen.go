@@ -131,6 +131,8 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 		switch to.(type) {
 		case TypeBool:
 			return fmt.Sprintf("len(%s) > 0", content)
+		case TypeInt:
+			return fmt.Sprintf("len(%s) > 0", content) // This was added to for example `if str.find("something") {` work. Does it cause any unwanted side effects?
 		default:
 			panic("Unimplemented coercion for slice")
 		}
