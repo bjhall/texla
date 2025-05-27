@@ -180,10 +180,22 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 	return g.coerce(varName, symbol.typ, coercion, CoercionModeDefault)
 }
 
+func (g *Generator) codegenIndexing(node Node) string {
+	switch node.Type() {
+	case RangeNodeType:
+		return fmt.Sprintf("%s:%s",
+			g.codegenExpr(node.(*RangeNode).from, TypeInt{}),
+			g.codegenExpr(node.(*RangeNode).to, TypeInt{}),
+		)
+	default:
+		return fmt.Sprintf("%s", g.codegenExpr(node, TypeInt{}))
+	}
+}
+
 func (g *Generator) codegenIndexedVar(node *IndexedVarNode, coercion Type) string {
 	varName := node.token.str
 
-	indexedVar := fmt.Sprintf("%s[%s]", varName, g.codegenExpr(node.index, TypeInt{}))
+	indexedVar := fmt.Sprintf("%s[%s]", varName, g.codegenIndexing(node.index))
 
 	symbol, _ := g.scope.lookupSymbol(varName)
 	if symbol.category != VariableSymbol {
@@ -729,6 +741,8 @@ func (g *Generator) codegenStatement(node Node) string {
 
 func (g *Generator) codegenExpr(node Node, coercion Type) string {
 	switch node.Type() {
+	case NoOpNodeType:
+		return ""
 	case UnaryOpNodeType:
 		return g.codegenUnaryOp(node.(*UnaryOpNode))
 	case BinOpNodeType:

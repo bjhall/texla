@@ -799,12 +799,11 @@ func (p *Parser) parseIterator() (Node, error) {
 	}
 	switch p.currentToken().kind {
 	case Range:
-		rangeToken := p.consumeToken() // ..
-		rangeEnd, err := p.parseExpr()
+		rangeNode, err := p.parseRange(firstExpr)
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		return &RangeNode{token: rangeToken, from: firstExpr, to: rangeEnd, step: 1}, nil
+		return rangeNode, nil
 
 	default:
 		switch firstExpr.Type() {
@@ -983,6 +982,12 @@ func (p *Parser) parseVar(checkIfDeclared bool) (Node, error) {
 	if p.currentToken().kind == OpenBracket {
 		p.consumeToken() // [
 		indexNode, err := p.parseExpr()
+		if p.currentToken().kind == Range {
+			indexNode, err = p.parseRange(indexNode)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+		}
 		_, err = p.expectToken(CloseBracket)
 		if err != nil {
 			return &NoOpNode{}, err
@@ -1021,16 +1026,29 @@ func (p *Parser) parseAssign(asExpr bool) (Node, error) {
 			return &NoOpNode{}, err
 		}
 		if p.currentToken().kind == Range {
-			// TODO: Factor this stuff out to a parseRange that takes the "from" node as an argument
-			rangeToken := p.consumeToken() // ..
-			end, err := p.parseExpr()
+			rangeNode, err := p.parseRange(right)
 			if err != nil {
 				return &NoOpNode{}, err
 			}
-			return &AssignNode{left: left, tok: token, right: &RangeNode{token: rangeToken, from: right, to: end, step: 1}, declaration: !exists}, nil
+			return &AssignNode{left: left, tok: token, right: rangeNode, declaration: !exists}, nil
 		}
 	}
 	return &AssignNode{left: left, tok: token, right: right, declaration: !exists, expression: asExpr}, nil
+}
+
+func (p *Parser) parseRange(startNode Node) (Node, error) {
+	rangeToken, err := p.expectToken(Range)
+	if err != nil {
+		return &NoOpNode{}, fmt.Errorf("Range must have .. operator")
+	}
+	var end Node = &NoOpNode{}
+	if p.currentToken().kind != CloseBracket {
+		end, err = p.parseExpr()
+		if err != nil {
+			return &NoOpNode{}, err
+		}
+	}
+	return &RangeNode{token: rangeToken, from: startNode, to: end, step: 1}, nil
 }
 
 func Parse(tokens []Token) (Node, error) {
