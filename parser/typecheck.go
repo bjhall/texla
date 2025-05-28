@@ -336,7 +336,22 @@ func (tc *TypeChecker) traverse(node Node) {
 		node.(*ForeachNode).body.(*CompoundStatementNode).SetVarType(node.(*ForeachNode).variable.token.str, controlVarType)
 		tc.traverse(node.(*ForeachNode).body)
 
-	case StringLiteralNodeType, NumNodeType, BoolNodeType, VarNodeType, NoOpNodeType, UnaryOpNodeType, ContinueNodeType, BreakNodeType, IncNodeType, DecNodeType:
+	case IncNodeType:
+		varSymbol, _ := tc.scope.lookupSymbol(node.(*IncNode).varName)
+		switch varSymbol.typ.(type) {
+		case TypeInt, TypeFloat:
+		default:
+			tc.error(fmt.Sprintf("Cannot use ++ operator on non-numeric types"))
+		}
+	case DecNodeType:
+		varSymbol, _ := tc.scope.lookupSymbol(node.(*DecNode).varName)
+		switch varSymbol.typ.(type) {
+		case TypeInt, TypeFloat:
+		default:
+			tc.error(fmt.Sprintf("Cannot use -- operator on non-numeric types"))
+		}
+
+	case StringLiteralNodeType, NumNodeType, BoolNodeType, VarNodeType, NoOpNodeType, UnaryOpNodeType, ContinueNodeType, BreakNodeType:
 		return
 
 	default:
