@@ -21,7 +21,9 @@ Not
 NotEqual
 Assign
 Minus
+MinusMinus
 Plus
+PlusPlus
 Mult
 Div
 Comment
@@ -61,6 +63,8 @@ RangeNodeType
 FailNodeType
 ContinueNodeType
 BreakNodeType
+IncNodeType
+DecNodeType
 
 -CoercionMode int
 CoercionModeDefault

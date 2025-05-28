@@ -232,11 +232,17 @@ func (t *Tokenizer) nextToken() (Token, error) {
 		}
 		return t.createTokenConsume(Less, 1), nil
 	case '-':
+		if t.peek(1) == '-' {
+			return t.createTokenConsume(MinusMinus, 2), nil
+		}
 		if t.peek(1) == '>' {
 			return t.createTokenConsume(RightArrow, 2), nil
 		}
 		return t.createTokenConsume(Minus, 1), nil
 	case '+':
+		if t.peek(1) == '+' {
+			return t.createTokenConsume(PlusPlus, 2), nil
+		}
 		return t.createTokenConsume(Plus, 1), nil
 	case '*':
 		return t.createTokenConsume(Mult, 1), nil

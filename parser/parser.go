@@ -890,6 +890,19 @@ func (p *Parser) parseStatement() (Node, error) {
 				return &NoOpNode{}, err
 			}
 			return node, nil
+		case PlusPlus:
+			varNode, err := p.parseVar(true)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return &IncNode{varName: varNode.(*VarNode).token.str, token: p.consumeToken()}, nil
+		case MinusMinus:
+			varNode, err := p.parseVar(true)
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return &DecNode{varName: varNode.(*VarNode).token.str, token: p.consumeToken()}, nil
+
 		default:
 			return &NoOpNode{}, fmt.Errorf("Syntax error (ADD PROPER ERROR MESSAGE HERE")
 		}

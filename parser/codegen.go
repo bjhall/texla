@@ -711,6 +711,14 @@ func (g *Generator) codegenForeach(node *ForeachNode) string {
 	}
 }
 
+func (g *Generator) codegenInc(node *IncNode) string {
+	return fmt.Sprintf("%s++", node.varName)
+}
+
+func (g *Generator) codegenDec(node *DecNode) string {
+	return fmt.Sprintf("%s--", node.varName)
+}
+
 func (g *Generator) codegenStatement(node Node) string {
 	switch node.Type() {
 	case AssignNodeType:
@@ -733,6 +741,10 @@ func (g *Generator) codegenStatement(node Node) string {
 		return "continue"
 	case BreakNodeType:
 		return "break"
+	case IncNodeType:
+		return g.codegenInc(node.(*IncNode))
+	case DecNodeType:
+		return g.codegenDec(node.(*DecNode))
 	default:
 		fmt.Println("CODEGEN TODO: Unknown node in statement", node.Type())
 		panic("")

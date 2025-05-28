@@ -24,7 +24,9 @@ const (
 	NotEqual
 	Assign
 	Minus
+	MinusMinus
 	Plus
+	PlusPlus
 	Mult
 	Div
 	Comment
@@ -64,7 +66,9 @@ func (s TokenKind) String() string {
 	case NotEqual: return "NotEqual"
 	case Assign: return "Assign"
 	case Minus: return "Minus"
+	case MinusMinus: return "MinusMinus"
 	case Plus: return "Plus"
+	case PlusPlus: return "PlusPlus"
 	case Mult: return "Mult"
 	case Div: return "Div"
 	case Comment: return "Comment"
@@ -110,6 +114,8 @@ const (
 	FailNodeType
 	ContinueNodeType
 	BreakNodeType
+	IncNodeType
+	DecNodeType
 )
 
 
@@ -140,6 +146,8 @@ func (s NodeType) String() string {
 	case FailNodeType: return "Fail"
 	case ContinueNodeType: return "Continue"
 	case BreakNodeType: return "Break"
+	case IncNodeType: return "Inc"
+	case DecNodeType: return "Dec"
 
 	default: return "???"
 	}

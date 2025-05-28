@@ -664,6 +664,47 @@ func (n *SliceLiteralNode) Precedence() int {
 	return 1000
 }
 
+// Increment node
+type IncNode struct {
+	Node
+	varName string
+	token Token
+}
+
+func (n *IncNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation+"Increment:", n.varName)
+}
+
+func (n *IncNode) Type() NodeType {
+	return IncNodeType
+}
+
+func (n *IncNode) Precedence() int {
+	return 1000
+}
+
+
+// Decrement node
+type DecNode struct {
+	Node
+	varName string
+	token   Token
+}
+
+func (n *DecNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation+"Decrement:", n.varName)
+}
+
+func (n *DecNode) Type() NodeType {
+	return DecNodeType
+}
+
+func (n *DecNode) Precedence() int {
+	return 1000
+}
+
 // Range node
 type RangeNode struct {
 	Node
