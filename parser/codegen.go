@@ -223,9 +223,9 @@ func (g *Generator) codegenSliceLiteral(node *SliceLiteralNode, coercion Type) s
 }
 
 func (g *Generator) codegenUnaryOp(node *UnaryOpNode) string {
-	switch node.op.kind {
+	switch node.token.kind {
 	case Not:
-		return fmt.Sprintf("%s(%s)", node.op.str, g.codegenExpr(node.expr, TypeBool{}))
+		return fmt.Sprintf("%s(%s)", node.token.str, g.codegenExpr(node.expr, TypeBool{}))
 	default:
 		panic("Codegen for unary op not implemeneted")
 	}
@@ -234,7 +234,7 @@ func (g *Generator) codegenUnaryOp(node *UnaryOpNode) string {
 func (g *Generator) codegenBinOp(node *BinOpNode, coercion Type) string {
 	left := g.codegenWithParens(node.left, node, coercion)
 	right := g.codegenWithParens(node.right, node, coercion)
-	return fmt.Sprintf("%s %s %s", left, node.op.str, right)
+	return fmt.Sprintf("%s %s %s", left, node.token.str, right)
 }
 
 func (g *Generator) codegenWithParens(node Node, parent Node, coercion Type) string {
@@ -412,7 +412,7 @@ func (g *Generator) codegenFunction(node *FunctionNode) string {
 		g.addPostStatement("return nil")
 	}
 	bodyStr := g.codegenCompoundStatement(node.body.(*CompoundStatementNode))
-	return fmt.Sprintf("func %s(%s) %s %s",	node.name.str,paramStr, returns,bodyStr)
+	return fmt.Sprintf("func %s(%s) %s %s",	node.token.str, paramStr, returns,bodyStr)
 }
 
 func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) string {

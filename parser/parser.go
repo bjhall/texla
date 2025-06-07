@@ -55,7 +55,7 @@ func (s *Scope) setSymbolType(name string, typ Type) error {
 		s.symbols[name] = symbol
 		return nil
 	}
-	return fmt.Errorf("UNREACHABLE: Trying to set type of non-existing symbol %q", name)
+	panic("UNREACHABLE")
 }
 
 func (s *Scope) lookupSymbol(name string) (Symbol, bool) {
@@ -90,6 +90,11 @@ type Parser struct {
 	blockDepth   int
 	currentScope *Scope
 	imports      map[string]bool
+	fileNames    []string
+}
+
+func (p *Parser) parseError(text string, token Token) error {
+	return fmt.Errorf("%s:%d:%d: %s", p.fileNames[token.file], token.line+1, token.column, text)
 }
 
 func (p *Parser) addImport(name string) {
@@ -103,7 +108,7 @@ func (s *Scope) setVariableUsed(name string) error {
 		return nil
 	}
 	if s.parent == nil {
-		return fmt.Errorf("Variable not found: %q", name)
+		panic("UNREACHABLE")
 	}
 	return s.parent.setVariableUsed(name)
 }
@@ -161,11 +166,12 @@ func (p *Parser) consumeToken() Token {
 	return p.tokens[p.tokenIdx-1]
 }
 
-func (p *Parser) expectToken(kind TokenKind) (Token, error) {
-	if p.currentToken().kind == kind {
+func (p *Parser) expectToken(expectedKind TokenKind) (Token, error) {
+	token := p.currentToken()
+	if token.kind == expectedKind {
 		return p.consumeToken(), nil
 	}
-	return Token{}, fmt.Errorf("Invalid token: expected %s, got %s %d:%d", kind, p.currentToken().kind, p.currentToken().line, p.currentToken().column)
+	return Token{}, p.parseError(fmt.Sprintf("invalid token: expected %s, got %q", expectedKind, token.str), token)
 }
 
 func (p *Parser) parseExpr() (Node, error) {
@@ -188,7 +194,7 @@ func (p *Parser) parseLogic() (Node, error) {
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		node = &BinOpNode{left: node, op: opToken, right: right}
+		node = &BinOpNode{left: node, token: opToken, right: right}
 	}
 	return node, nil
 }
@@ -205,7 +211,7 @@ func (p *Parser) parseComparison() (Node, error) {
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		node = &BinOpNode{left: node, op: opToken, right: right}
+		node = &BinOpNode{left: node, token: opToken, right: right}
 	}
 	return node, nil
 }
@@ -230,7 +236,7 @@ func (p *Parser) parseTerm() (Node, error) {
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		node = &BinOpNode{left: node, op: opToken, right: right}
+		node = &BinOpNode{left: node, token: opToken, right: right}
 	}
 	return node, nil
 }
@@ -247,7 +253,7 @@ func (p *Parser) parseFactor() (Node, error) {
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		node = &BinOpNode{left: node, op: opToken, right: right}
+		node = &BinOpNode{left: node, token: opToken, right: right}
 	}
 	return node, nil
 }
@@ -314,7 +320,7 @@ func (p *Parser) parsePrimary() (Node, error) {
 		case "false":
 			return &BoolNode{token: p.consumeToken()}, nil
 		default:
-			return &NoOpNode{}, fmt.Errorf("Unexpected keyword: %q", keyword)
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("invalid keyword in primary expression: %q", keyword), p.currentToken())
 		}
 
 	case StringLiteral:
@@ -339,24 +345,24 @@ func (p *Parser) parsePrimary() (Node, error) {
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		return &UnaryOpNode{op: op, expr: expr}, nil
+		return &UnaryOpNode{token: op, expr: expr}, nil
 
 	case OpenBracket:
 		slice, err := p.parseSliceLiteral()
 		if err != nil {
 			return &NoOpNode{}, err
 		}
-		return slice, nil
+	return slice, nil
 
 	default:
-		return &NoOpNode{}, fmt.Errorf("Unexpected token: %q", p.currentToken().str)
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("invalid initial token in expression: %q", p.currentToken().str), p.currentToken())
 	}
 }
 
 func (p *Parser) parseSliceLiteral() (Node, error) {
 	_, err := p.expectToken(OpenBracket)
 	if err != nil {
-		return &NoOpNode{}, err
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("error parsing slice literal: %v", err), p.currentToken())
 	}
 
 	// TODO: Parsing a comma separated list of expression should probably be extracted to a function
@@ -372,18 +378,18 @@ func (p *Parser) parseSliceLiteral() (Node, error) {
 		}
 		_, err = p.expectToken(Comma)
 		if err != nil {
-			return &NoOpNode{}, err
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("failed to parse expression list in slice literal, expected , or ]"), p.currentToken())
 		}
 
 		// Allow slice literal to end with comma
-		if p.currentToken().kind == CloseBracket {
+		if p.currentToken().kind == CloseBracket || p.currentToken().kind == Eof {
 			break
 		}
 	}
 
 	_, err = p.expectToken(CloseBracket)
 	if err != nil {
-		return &NoOpNode{}, err
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("slice literal was not closed, missing ]"), p.currentToken())
 	}
 
 	return &SliceLiteralNode{elements: elements}, nil
@@ -432,12 +438,12 @@ func (p *Parser) parseType() (Type, error) {
 	case "bool":
 		return TypeBool{}, nil
 	default:
-		return TypeUndetermined{}, fmt.Errorf("Unknown type: %q", typeToken.str)
+		return TypeUndetermined{}, p.parseError(fmt.Sprintf("expected type, got: %q", typeToken.str), p.currentToken())
 	}
 }
 
-func literalTokenType(tok Token) (Type, error) {
-	switch tok.kind {
+func literalTokenType(token Token) (Type, error) {
+	switch token.kind {
 	case Integer:
 		return TypeInt{}, nil
 	case Float:
@@ -445,14 +451,11 @@ func literalTokenType(tok Token) (Type, error) {
 	case StringLiteral:
 		return TypeString{}, nil
 	case Keyword:
-		if tok.str == "true" || tok.str == "false" {
+		if token.str == "true" || token.str == "false" {
 			return TypeBool{}, nil
 		}
-		return TypeUndetermined{}, fmt.Errorf("Token is not literal %q", tok.kind)
-	default:
-		fmt.Println(tok)
-		return TypeUndetermined{}, fmt.Errorf("Token is not literal %q", tok.kind)
 	}
+	return TypeUndetermined{}, fmt.Errorf("expected literal, got %s (%q)", token.kind, token.str)
 }
 
 func (p *Parser) parseParameter() (Node, error) {
@@ -469,12 +472,12 @@ func (p *Parser) parseParameter() (Node, error) {
 		defaultToken := p.consumeToken()
 		literalType, err := literalTokenType(defaultToken)
 		if err != nil {
-			return &NoOpNode{}, err
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("invalid default argument: %v", err), defaultToken)
 		}
 		if typ == literalType {
 			return &ParameterNode{name: name.str, typ: typ, hasDefault: true, defaultValue: defaultToken.str}, nil
 		}
-		return &NoOpNode{}, fmt.Errorf("Default argument has wrong type")
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("default argument has wrong type, expected %s, got %s (%q)", typ, literalType, defaultToken.str), defaultToken)
 	}
 	return &ParameterNode{name: name.str, typ: typ}, nil
 }
@@ -493,7 +496,7 @@ func (p *Parser) parseParameterList() (Node, error) {
 		case CloseParen:
 			break
 		default:
-			return &NoOpNode{}, fmt.Errorf("Parameter declaration must be followed by ) or ,")
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("parameter declaration must be followed by \")\" or \",\", got %s", p.currentToken().str), p.currentToken())
 		}
 	}
 	return &ParameterListNode{parameters: paramList}, nil
@@ -505,7 +508,7 @@ func (p *Parser) parseReturnType() (Type, error) {
 		return TypeUndetermined{}, err
 	}
 	if p.currentToken().kind != OpenCurly {
-		return TypeUndetermined{}, fmt.Errorf("Expected `{` after return type declaration")
+		return TypeUndetermined{}, p.parseError(fmt.Sprintf("expected \"{\" after return type declaration, got %q", p.currentToken().str), p.currentToken())
 	}
 	return typ, nil
 
@@ -555,7 +558,7 @@ func (p *Parser) parseFunction() (Node, error) {
 
 	isNew := p.createFunctionInCurrentScope(functionName.str, parameterList.(*ParameterListNode), returnType, fallible)
 	if !isNew {
-		return &NoOpNode{}, fmt.Errorf("Function with name %q already exists in the same scope", functionName.str)
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("function with name %q already exists in the same scope", functionName.str), functionName)
 	}
 
 	functionBody, err := p.parseCompoundStatement(parameterList.(*ParameterListNode).parameters, returnType, fallible)
@@ -563,7 +566,7 @@ func (p *Parser) parseFunction() (Node, error) {
 		return &NoOpNode{}, err
 	}
 
-	return &FunctionNode{name: functionName, parameters: parameterList, body: functionBody, returnType: returnType, fallible: fallible}, nil
+	return &FunctionNode{token: functionName, parameters: parameterList, body: functionBody, returnType: returnType, fallible: fallible}, nil
 }
 
 func (p *Parser) parseArgumentList(self Node) ([]Node, error) {
@@ -593,7 +596,7 @@ func (p *Parser) parseArgumentList(self Node) ([]Node, error) {
 			p.consumeToken() // =
 			namedArgumentSeen = true
 		} else if namedArgumentSeen {
-			return arguments, fmt.Errorf("Named argument cannot be followed by unnamed argument in list of arguments")
+			return arguments, p.parseError(fmt.Sprintf("named argument cannot be followed by unnamed argument"), p.currentToken())
 		}
 
 		// Parse the actual argument
@@ -614,7 +617,7 @@ func (p *Parser) parseArgumentList(self Node) ([]Node, error) {
 		case CloseParen:
 			break
 		default:
-			return arguments, fmt.Errorf("Expected , or ) after argument in argument list")
+			return arguments, p.parseError(fmt.Sprintf("expected \",\" or \")\" after argument, got %s", p.currentToken().str), p.currentToken())
 		}
 	}
 	return arguments, nil
@@ -634,7 +637,7 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 			p.addImport("fmt")
 			functionToken, err = p.expectToken(Keyword)
 		default:
-			return &NoOpNode{}, fmt.Errorf("UNREACHABLE: Unsupported keyword in function call: %q", keyword)
+			panic("UNREACHABLE")
 		}
 	}
 
@@ -670,11 +673,11 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 	// Special case for generator build-ins such as read()
 	if isBuiltin(functionToken.str) && p.currentToken().kind == RightArrow {
 
-		p.consumeToken() // ->
+		arrowToken := p.consumeToken() // ->
 
 		_, isGenerator := builtins[functionToken.str].returnType.(*TypeGenerator)
 		if isGenerator {
-			return &NoOpNode{}, fmt.Errorf("Cannot put -> after non-generator function %q", functionToken.str)
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("cannot put \"->\" after non-generator function %q", functionToken.str), arrowToken)
 		}
 
 		variable, err := p.parseVar(false)
@@ -904,7 +907,7 @@ func (p *Parser) parseStatement() (Node, error) {
 			return &DecNode{varName: varNode.(*VarNode).token.str, token: p.consumeToken()}, nil
 
 		default:
-			return &NoOpNode{}, fmt.Errorf("Syntax error (ADD PROPER ERROR MESSAGE HERE")
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("unexpected token %q following identifier %q in statement", p.peek(1).str, p.currentToken().str), p.peek(1))
 		}
 
 	case Keyword:
@@ -959,7 +962,7 @@ func (p *Parser) parseStatement() (Node, error) {
 			p.consumeToken()
 			return &BreakNode{}, nil
 		default:
-			return &NoOpNode{}, fmt.Errorf("TODO: Parsing of keyword %q not implemented", p.currentToken().str)
+			panic("Unimplemented keyword")
 		}
 
 	case OpenCurly:
@@ -975,7 +978,7 @@ func (p *Parser) parseStatement() (Node, error) {
 		}
 		return node, nil
 	default:
-		return &NoOpNode{}, fmt.Errorf("Unknown first token in statement: %q", p.currentToken().kind)
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("unexpected initial token in statement %q (%s)", p.currentToken().str, p.currentToken().kind), p.currentToken())
 	}
 }
 
@@ -987,7 +990,7 @@ func (p *Parser) parseVar(checkIfDeclared bool) (Node, error) {
 
 	if checkIfDeclared {
 		if isDeclared := p.validateVariable(token.str); !isDeclared {
-			return &NoOpNode{}, fmt.Errorf("Use of non-declared variable: %q %d:%d", token.str, token.line, token.column)
+			return &NoOpNode{}, p.parseError(fmt.Sprintf("use of undeclared variable: %q", token.str), token)
 		}
 	}
 
@@ -1043,16 +1046,16 @@ func (p *Parser) parseAssign(asExpr bool) (Node, error) {
 			if err != nil {
 				return &NoOpNode{}, err
 			}
-			return &AssignNode{left: left, tok: token, right: rangeNode, declaration: !exists}, nil
+			return &AssignNode{left: left, token: token, right: rangeNode, declaration: !exists}, nil
 		}
 	}
-	return &AssignNode{left: left, tok: token, right: right, declaration: !exists, expression: asExpr}, nil
+	return &AssignNode{left: left, token: token, right: right, declaration: !exists, expression: asExpr}, nil
 }
 
 func (p *Parser) parseRange(startNode Node) (Node, error) {
 	rangeToken, err := p.expectToken(Range)
 	if err != nil {
-		return &NoOpNode{}, fmt.Errorf("Range must have .. operator")
+		panic("UNREACHABLE")
 	}
 	var end Node = &NoOpNode{}
 	if p.currentToken().kind != CloseBracket {
@@ -1064,9 +1067,9 @@ func (p *Parser) parseRange(startNode Node) (Node, error) {
 	return &RangeNode{token: rangeToken, from: startNode, to: end, step: 1}, nil
 }
 
-func Parse(tokens []Token) (Node, error) {
+func Parse(tokens []Token, fileNames []string) (Node, error) {
 	rootScope := newScope(nil, nil, NoReturn{}, false)
-	parser := Parser{tokens, 0, 0, rootScope, make(map[string]bool)}
+	parser := Parser{tokens, 0, 0, rootScope, make(map[string]bool), fileNames}
 
 	var functions []Node
 	for parser.currentToken().kind != Eof {

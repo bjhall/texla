@@ -9,6 +9,16 @@ type Node interface {
 	Print(level int)
 	Type() NodeType
 	Precedence() int
+	Token() Token
+}
+
+type CommonNode struct {
+	Node
+	token Token
+}
+
+func (n *CommonNode) Token() Token {
+	return n.token
 }
 
 // NoOp
@@ -29,9 +39,13 @@ func (n *NoOpNode) Precedence() int {
 	return 0
 }
 
+func (n *NoOpNode) Token() Token {
+	return Token{}
+}
+
 // Number literals
 type NumNode struct {
-	Node
+	CommonNode
 	token Token
 }
 
@@ -59,9 +73,10 @@ func (n *NumNode) NumType() Type {
 	}
 }
 
+
 // Boolean literals
 type BoolNode struct {
-	Node
+	CommonNode
 	token Token
 }
 
@@ -99,7 +114,7 @@ func (n *StringLiteralNode) Precedence() int {
 
 // Variable node
 type VarNode struct {
-	Node
+	CommonNode
 	token Token
 }
 
@@ -118,7 +133,7 @@ func (n *VarNode) Precedence() int {
 
 // Indexed variable node
 type IndexedVarNode struct {
-	Node
+	CommonNode
 	token Token
 	index Node
 }
@@ -140,15 +155,15 @@ func (n *IndexedVarNode) Precedence() int {
 
 // Binary operator node
 type BinOpNode struct {
-	Node
+	CommonNode
 	left  Node
-	op    Token
+	token Token
 	right Node
 }
 
 func (n *BinOpNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+"BinOp", n.op.str)
+	fmt.Println(indentation+"BinOp", n.token.str)
 	n.left.Print(level + 1)
 	n.right.Print(level + 1)
 }
@@ -158,7 +173,7 @@ func (n *BinOpNode) Type() NodeType {
 }
 
 func (n *BinOpNode) Precedence() int {
-	switch n.op.kind {
+	switch n.token.kind {
 	case LogicAnd, LogicOr:
 		return 1
 	case Equal, NotEqual:
@@ -177,14 +192,14 @@ func (n *BinOpNode) Precedence() int {
 
 // Unary operator node
 type UnaryOpNode struct {
-	Node
-	op   Token
-	expr Node
+	CommonNode
+	token Token
+	expr  Node
 }
 
 func (n *UnaryOpNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+"UnaryOp", n.op.str)
+	fmt.Println(indentation+"UnaryOp", n.token.str)
 	n.expr.Print(level + 1)
 }
 
@@ -193,7 +208,7 @@ func (n *UnaryOpNode) Type() NodeType {
 }
 
 func (n *UnaryOpNode) Precedence() int {
-	switch n.op.kind {
+	switch n.token.kind {
 	case Not:
 		return 6
 	default:
@@ -203,9 +218,9 @@ func (n *UnaryOpNode) Precedence() int {
 
 // Assignment node
 type AssignNode struct {
-	Node
+	CommonNode
 	left        Node
-	tok         Token
+	token       Token
 	right       Node
 	declaration bool
 	expression  bool
@@ -233,7 +248,8 @@ func (n *AssignNode) Precedence() int {
 
 // Compound statements
 type CompoundStatementNode struct {
-	Node
+	CommonNode
+	token      Token
 	children   []Node
 	unusedVars []string
 	scope      *Scope
@@ -262,8 +278,8 @@ func (n *CompoundStatementNode) SetVarType(name string, typ Type) {
 
 // Function
 type FunctionNode struct {
-	Node
-	name       Token
+	CommonNode
+	token      Token
 	parameters Node
 	body       Node
 	returnType Type
@@ -272,7 +288,7 @@ type FunctionNode struct {
 
 func (n *FunctionNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
-	fmt.Println(indentation+"Function", n.name.str, "fallible?", n.fallible)
+	fmt.Println(indentation+"Function", n.token.str, "fallible?", n.fallible)
 	n.parameters.Print(level + 1)
 	n.body.Print(level + 1)
 }
@@ -287,7 +303,8 @@ func (n *FunctionNode) Precedence() int {
 
 // Argument
 type ArgumentNode struct {
-	Node
+	CommonNode
+	token     Token
 	expr      Node
 	paramName string
 	order     int
@@ -311,7 +328,8 @@ func (n *ArgumentNode) Precedence() int {
 
 // Function call
 type FunctionCallNode struct {
-	Node
+	CommonNode
+	token              Token
 	name               string
 	arguments          []Node
 	isBuiltin          bool
@@ -429,9 +447,14 @@ func (n *ProgramNode) addImport(importName string) {
 	n.imports[importName] = true
 }
 
+func (n *ProgramNode) Token() Token {
+	return Token{}
+}
+
 // Parameter node
 type ParameterNode struct {
-	Node
+	CommonNode
+	token        Token
 	name         string
 	typ          Type
 	hasDefault   bool
@@ -468,7 +491,8 @@ func (n *ParameterNode) CreateDefaultNode() ArgumentNode {
 
 // Parameter list node
 type ParameterListNode struct {
-	Node
+	CommonNode
+	token      Token
 	parameters []ParameterNode
 }
 
@@ -490,7 +514,8 @@ func (n *ParameterListNode) Precedence() int {
 
 // Return node
 type ReturnNode struct {
-	Node
+	CommonNode
+	token    Token
 	expr     Node
 	typ      Type
 	function FunctionNode
@@ -516,7 +541,8 @@ func (n *ReturnNode) Precedence() int {
 
 // Continue node
 type ContinueNode struct {
-	Node
+	CommonNode
+	token Token
 }
 
 func (n *ContinueNode) Print(level int) {
@@ -534,7 +560,8 @@ func (n *ContinueNode) Precedence() int {
 
 // Break node
 type BreakNode struct {
-	Node
+	CommonNode
+	token Token
 }
 
 func (n *BreakNode) Print(level int) {
@@ -552,7 +579,8 @@ func (n *BreakNode) Precedence() int {
 
 // Fail node
 type FailNode struct {
-	Node
+	CommonNode
+	token    Token
 	expr     Node
 	typ      Type
 	function FunctionNode
@@ -578,7 +606,8 @@ func (n *FailNode) Precedence() int {
 
 // If node
 type IfNode struct {
-	Node
+	CommonNode
+	token    Token
 	comp     Node
 	body     Node
 	elseBody Node
@@ -610,7 +639,8 @@ func (n *IfNode) Precedence() int {
 
 // Foreach node
 type ForeachNode struct {
-	Node
+	CommonNode
+	token       Token
 	iterator    Node
 	variable    VarNode
 	idxVariable VarNode
@@ -642,7 +672,8 @@ func (n *ForeachNode) Precedence() int {
 
 // SLice literal node
 type SliceLiteralNode struct {
-	Node
+	CommonNode
+	token      Token
 	elements    []Node
 	elementType Type
 }
@@ -666,7 +697,7 @@ func (n *SliceLiteralNode) Precedence() int {
 
 // Increment node
 type IncNode struct {
-	Node
+	CommonNode
 	varName string
 	token Token
 }
@@ -687,7 +718,7 @@ func (n *IncNode) Precedence() int {
 
 // Decrement node
 type DecNode struct {
-	Node
+	CommonNode
 	varName string
 	token   Token
 }

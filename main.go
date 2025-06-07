@@ -23,7 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	tokens, err := parser.Tokenize(string(code) + "\n")
+	tokens, err := parser.Tokenize(string(code) + "\n", 0)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "LEXER ERROR: %s\n", err)
 		os.Exit(1)
@@ -38,9 +38,9 @@ func main() {
 		}
 	}
 
-	ast, err := parser.Parse(tokens)
+	ast, err := parser.Parse(tokens, inFiles)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "PARSE ERROR: %s\n", err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 

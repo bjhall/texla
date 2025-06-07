@@ -1,4 +1,4 @@
-/// ERR = PARSE ERROR: Function with name "hello" already exists in the same scope
+/// ERR = error_duplicate_function.txl:6:8: function with name "hello" already exists in the same scope
 fn hello() {
     print("Hello")
 }

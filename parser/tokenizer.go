@@ -8,6 +8,7 @@ import (
 
 type Token struct {
 	kind   TokenKind
+	file   int
 	str    string
 	line   int
 	column int
@@ -16,15 +17,17 @@ type Token struct {
 type Tokenizer struct {
 	source        string
 	pos           int
+	fileNum       int
 	currentLine   int
 	currentColumn int
 	state         string
 }
 
-func newTokenizer(source_string string) Tokenizer {
+func newTokenizer(sourceString string, fileNum int) Tokenizer {
 	parser := Tokenizer{
-		source:        source_string,
+		source:        sourceString,
 		pos:           0,
+		fileNum:       fileNum,
 		currentLine:   0,
 		currentColumn: 0,
 		state:         "top",
@@ -128,9 +131,9 @@ func (t *Tokenizer) consumeIdentifier() Token {
 	}
 	switch identifierString {
 	case "fn", "if", "for", "in", "print", "return", "true", "false", "else", "fail", "continue", "break":
-		return Token{kind: Keyword, str: identifierString}
+		return t.createTokenFromString(Keyword, identifierString)
 	default:
-		return Token{kind: Identifier, str: identifierString}
+		return t.createTokenFromString(Identifier, identifierString)
 	}
 }
 
@@ -290,8 +293,8 @@ func (t *Tokenizer) nextToken() (Token, error) {
 	}
 }
 
-func Tokenize(code_string string) ([]Token, error) {
-	tokenizer := newTokenizer(code_string)
+func Tokenize(codeString string, fileNum int) ([]Token, error) {
+	tokenizer := newTokenizer(codeString, fileNum)
 
 	var tokens []Token
 	for {
