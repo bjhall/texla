@@ -675,8 +675,8 @@ func (p *Parser) parseFunctionCall(self Node) (Node, error) {
 
 		arrowToken := p.consumeToken() // ->
 
-		_, isGenerator := builtins[functionToken.str].returnType.(*TypeGenerator)
-		if isGenerator {
+		_, isGenerator := builtins[functionToken.str].returnType.(TypeGenerator)
+		if !isGenerator {
 			return &NoOpNode{}, p.parseError(fmt.Sprintf("cannot put \"->\" after non-generator function %q", functionToken.str), arrowToken)
 		}
 
