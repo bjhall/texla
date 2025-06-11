@@ -107,6 +107,7 @@ const (
 	ReturnNodeType
 	IfNodeType
 	SliceLiteralNodeType
+	SetLiteralNodeType
 	ArgumentNodeType
 	IndexedVarNodeType
 	ForeachNodeType
@@ -139,6 +140,7 @@ func (s NodeType) String() string {
 	case ReturnNodeType: return "Return"
 	case IfNodeType: return "If"
 	case SliceLiteralNodeType: return "SliceLiteral"
+	case SetLiteralNodeType: return "SetLiteral"
 	case ArgumentNodeType: return "Argument"
 	case IndexedVarNodeType: return "IndexedVar"
 	case ForeachNodeType: return "Foreach"

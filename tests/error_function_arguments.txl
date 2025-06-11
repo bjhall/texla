@@ -1,10 +1,10 @@
-/// ERR = Value missing for argument "b" (int) of function "add"
+/// ERR = Value missing for argument "b" (int) of function "sum"
 
-fn add(a int, b int) {
+fn sum(a int, b int) {
     print(a+b)
 }
 
 
 fn main() {
-    add(10)
+    sum(10)
 }

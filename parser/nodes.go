@@ -695,6 +695,31 @@ func (n *SliceLiteralNode) Precedence() int {
 	return 1000
 }
 
+// SLice literal node
+type SetLiteralNode struct {
+	CommonNode
+	token      Token
+	elements    []Node
+	elementType Type
+}
+
+func (n *SetLiteralNode) Print(level int) {
+	indentation := strings.Repeat(" ", level*4)
+	fmt.Println(indentation+"Set literal,", n.elementType)
+	for i, e := range n.elements {
+		fmt.Println(indentation+"    "+"Element", i)
+		e.Print(level + 1)
+	}
+}
+
+func (n *SetLiteralNode) Type() NodeType {
+	return SetLiteralNodeType
+}
+
+func (n *SetLiteralNode) Precedence() int {
+	return 1000
+}
+
 // Increment node
 type IncNode struct {
 	CommonNode

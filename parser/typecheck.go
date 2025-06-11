@@ -43,6 +43,21 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 		}
 		node.(*FunctionCallNode).setArgType("dest", containerType)
 
+	case "add":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["dest"].expr)
+		if !isSettable(containerType) {
+			tc.error(fmt.Sprintf("add() can only be used on sets, not %q", containerType))
+		}
+		node.(*FunctionCallNode).setArgType("dest", containerType)
+
+	case "has":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["haystack"].expr)
+		// TODO: Allow contains to be used on slices and strings too?
+		if !isSettable(containerType) {
+			tc.error(fmt.Sprintf("contains() can only be used on sets, not %q", containerType))
+		}
+		node.(*FunctionCallNode).setArgType("haystack", containerType)
+
 	case "len":
 		containerType := tc.typecheckExpr(fnNode.resolvedArgs["var"].expr)
 		if !isAppendable(containerType) {
@@ -72,38 +87,44 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 	return returnType
 }
 
-func (tc *TypeChecker) typecheckExpr(node Node) Type {
-	switch node.Type() {
-	case NumNodeType:
-		return node.(*NumNode).NumType()
-	case StringLiteralNodeType:
-		return TypeString{}
-	case BoolNodeType:
-		return TypeBool{}
-	case SliceLiteralNodeType:
-		typeCoercionPrecedence := map[Type]int{TypeFloat{}: 3, TypeString{}: 2, TypeInt{}: 1}
-
-		var coercionType Type
-		var highestPrecedence int
-		for _, elem := range node.(*SliceLiteralNode).elements {
-			typ := tc.typecheckExpr(elem)
-			precedence, found := typeCoercionPrecedence[typ]
-			if !found {
-				tc.error(fmt.Sprintf("Type %s not allowed in slice literal", typ))
-				continue
-			}
-			if precedence > highestPrecedence {
-				highestPrecedence = precedence
-				coercionType = typ
-			}
+func (tc *TypeChecker) typecheckExprList(nodes []Node) Type {
+	typeCoercionPrecedence := map[Type]int{TypeString{}: 3, TypeFloat{}: 2, TypeInt{}: 1}
+	var coercionType Type
+	var highestPrecedence int
+	for _, elem := range nodes {
+		typ := tc.typecheckExpr(elem)
+		precedence, found := typeCoercionPrecedence[typ]
+		if !found {
+			tc.error(fmt.Sprintf("Type %s not allowed in expression list", typ))
+			continue
 		}
+		if precedence > highestPrecedence {
+			highestPrecedence = precedence
+			coercionType = typ
+		}
+	}
+	return coercionType
+}
 
-		node.(*SliceLiteralNode).elementType = coercionType
-		return TypeSlice{ElementType: coercionType}
-
-	case BinOpNodeType:
-		leftType := tc.typecheckExpr(node.(*BinOpNode).left)
-		rightType := tc.typecheckExpr(node.(*BinOpNode).right)
+func (tc *TypeChecker) typecheckExpr(node Node) Type {
+	switch n := node.(type) {
+	case *NumNode:
+		return n.NumType()
+	case *StringLiteralNode:
+		return TypeString{}
+	case *BoolNode:
+		return TypeBool{}
+	case *SliceLiteralNode:
+		elementType := tc.typecheckExprList(n.elements)
+		n.elementType = elementType
+		return TypeSlice{ElementType: elementType}
+	case *SetLiteralNode:
+		elementType := tc.typecheckExprList(n.elements)
+		n.elementType = elementType
+		return TypeSet{ElementType: elementType}
+	case *BinOpNode:
+		leftType := tc.typecheckExpr(n.left)
+		rightType := tc.typecheckExpr(n.right)
 		if leftType == rightType {
 			return leftType
 		}
@@ -115,19 +136,19 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		}
 		return TypeInt{}
 
-	case UnaryOpNodeType:
-		return tc.typecheckExpr(node.(*UnaryOpNode).expr)
+	case *UnaryOpNode:
+		return tc.typecheckExpr(n.expr)
 
-	case VarNodeType:
-		varSymbol, found := tc.scope.lookupSymbol(node.(*VarNode).token.str)
+	case *VarNode:
+		varSymbol, found := tc.scope.lookupSymbol(n.token.str)
 		if found {
 			return varSymbol.typ
 		}
 		fmt.Println("UNREACHABLE: Trying to look up type of undefined variable")
 		os.Exit(1)
 
-	case IndexedVarNodeType:
-		varSymbol, found := tc.scope.lookupSymbol(node.(*IndexedVarNode).token.str)
+	case *IndexedVarNode:
+		varSymbol, found := tc.scope.lookupSymbol(n.token.str)
 		if !found {
 			fmt.Println("UNREACHABLE: Trying to look up type of undefined indexed variable")
 			os.Exit(1)
@@ -141,8 +162,8 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 			fmt.Printf("%s is not indexable\n", t)
 		}
 
-	case FunctionCallNodeType:
-		fnNode := node.(*FunctionCallNode)
+	case *FunctionCallNode:
+		fnNode := n
 		functionName := fnNode.name
 		if isBuiltin(functionName) {
 			return tc.typecheckBuiltin(fnNode)
@@ -160,27 +181,27 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		fmt.Println("UNREACHABLE: Trying to look up type of non-existing function")
 		os.Exit(1)
 
-	case RangeNodeType:
-		fromType := tc.typecheckExpr(node.(*RangeNode).from)
+	case *RangeNode:
+		fromType := tc.typecheckExpr(n.from)
 		if (fromType != TypeInt{}) {
 			tc.error("The from value of a range must be integer")
 		}
-		toType := tc.typecheckExpr(node.(*RangeNode).from)
+		toType := tc.typecheckExpr(n.from)
 		if (toType != TypeInt{}) {
 			tc.error("The to value of a range must be integer")
 		}
 		return TypeSlice{ElementType: TypeInt{}}
-	case AssignNodeType:
-		if node.(*AssignNode).expression == false {
+	case *AssignNode:
+		if n.expression == false {
 			panic("Typechecking non-exression assignment")
 		}
-		lhs := node.(*AssignNode).left
+		lhs := n.left
 		lhsSymbol, found := tc.scope.lookupSymbol(lhs.(*VarNode).token.str)
 		if found && lhsSymbol.typ.String() == "Undetermined" {
-			rhsType := tc.typecheckExpr(node.(*AssignNode).right)
+			rhsType := tc.typecheckExpr(n.right)
 			tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
 		}
-		return tc.typecheckExpr(node.(*AssignNode).right)
+		return tc.typecheckExpr(n.right)
 
 	default:
 		fmt.Println("TODO: Typechecking not implemented for", node.Type())
@@ -191,61 +212,58 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 
 func (tc *TypeChecker) traverse(node Node) {
 
-	switch node.Type() {
+	switch n := node.(type) {
 
-	case ProgramNodeType:
-		for _, function := range node.(*ProgramNode).functions {
+	case *ProgramNode:
+		for _, function := range n.functions {
 			tc.traverse(function)
 		}
 
-	case FunctionNodeType:
-		tc.traverse(node.(*FunctionNode).body)
+	case *FunctionNode:
+		tc.traverse(n.body)
 
-	case CompoundStatementNodeType:
-		tc.scope = node.(*CompoundStatementNode).scope
-		for _, child := range node.(*CompoundStatementNode).children {
+	case *CompoundStatementNode:
+		tc.scope = n.scope
+		for _, child := range n.children {
 			tc.traverse(child)
 		}
 		tc.scope = tc.scope.parent
 
-	case IfNodeType:
-		compType := tc.typecheckExpr(node.(*IfNode).comp)
+	case *IfNode:
+		compType := tc.typecheckExpr(n.comp)
 		node.(*IfNode).setCompType(compType)
 		// TODO: Ensure that comparison is a boolean value
-		tc.traverse(node.(*IfNode).comp)
-		tc.traverse(node.(*IfNode).body)
-		tc.traverse(node.(*IfNode).elseBody)
+		tc.traverse(n.comp)
+		tc.traverse(n.body)
+		tc.traverse(n.elseBody)
 
-	case AssignNodeType:
-		if !node.(*AssignNode).expression {
-			lhs := node.(*AssignNode).left
-			rhs := node.(*AssignNode).right
-
-			lhsSymbol, found := tc.scope.lookupSymbol(lhs.(*VarNode).token.str)
+	case *AssignNode:
+		if !n.expression {
+			lhsSymbol, found := tc.scope.lookupSymbol(n.left.(*VarNode).token.str)
 			if found && lhsSymbol.typ.String() == "Undetermined" {
-				rhsType := tc.typecheckExpr(rhs)
-				tc.scope.setSymbolType(lhs.(*VarNode).token.str, rhsType)
+				rhsType := tc.typecheckExpr(n.right)
+				tc.scope.setSymbolType(n.left.(*VarNode).token.str, rhsType)
 			} else {
 				// Do nothing?
 			}
-			tc.traverse(rhs)
+			tc.traverse(n.right)
 		}
 
-	case ReturnNodeType:
-		node.(*ReturnNode).setType(tc.typecheckExpr(node.(*ReturnNode).expr))
+	case *ReturnNode:
+		n.setType(tc.typecheckExpr(n.expr))
 
-	case FailNodeType:
+	case *FailNode:
 		if !tc.scope.closestReturningScope().fallible {
 			tc.error("Cannot use `fail` in non-fallible function")
 		}
-		exprType := tc.typecheckExpr(node.(*FailNode).expr)
+		exprType := tc.typecheckExpr(n.expr)
 		if exprType != (TypeString{}) {
 			tc.error("Failure expression must be a string")
 		}
 
 
-	case FunctionCallNodeType:
-		fnNode := node.(*FunctionCallNode)
+	case *FunctionCallNode:
+		fnNode := n
 		functionName := fnNode.name
 
 		var parameters []ParameterNode
@@ -304,54 +322,59 @@ func (tc *TypeChecker) traverse(node Node) {
 		}
 
 
-	case IndexedVarNodeType:
-		tc.traverse(node.(*IndexedVarNode).index)
+	case *IndexedVarNode:
+		tc.traverse(n.index)
 
-	case RangeNodeType:
-		tc.traverse(node.(*RangeNode).from)
-		tc.traverse(node.(*RangeNode).to)
+	case *RangeNode:
+		tc.traverse(n.from)
+		tc.traverse(n.to)
 
-	case ArgumentNodeType:
-		tc.traverse(node.(*ArgumentNode).expr)
+	case *ArgumentNode:
+		tc.traverse(n.expr)
 
-	case BinOpNodeType:
-		tc.traverse(node.(*BinOpNode).left)
-		tc.traverse(node.(*BinOpNode).right)
+	case *BinOpNode:
+		tc.traverse(n.left)
+		tc.traverse(n.right)
 
-	case SliceLiteralNodeType:
-		for _, el := range node.(*SliceLiteralNode).elements {
+	case *SliceLiteralNode:
+		for _, el := range n.elements {
 			tc.traverse(el)
 		}
 
-	case ForeachNodeType:
+	case *SetLiteralNode:
+		for _, el := range n.elements {
+			tc.traverse(el)
+		}
+
+	case *ForeachNode:
 		var controlVarType Type
 
-		switch node.(*ForeachNode).iterator.Type() {
+		switch n.iterator.Type() {
 		case RangeNodeType:
 			controlVarType = TypeInt{}
 		default:
-			iterType := tc.typecheckExpr(node.(*ForeachNode).iterator)
+			iterType := tc.typecheckExpr(n.iterator)
 			controlVarType = iterType.(IterableType).GetElementType()
 		}
-		node.(*ForeachNode).body.(*CompoundStatementNode).SetVarType(node.(*ForeachNode).variable.token.str, controlVarType)
-		tc.traverse(node.(*ForeachNode).body)
+		node.(*ForeachNode).body.(*CompoundStatementNode).SetVarType(n.variable.token.str, controlVarType)
+		tc.traverse(n.body)
 
-	case IncNodeType:
-		varSymbol, _ := tc.scope.lookupSymbol(node.(*IncNode).varName)
+	case *IncNode:
+		varSymbol, _ := tc.scope.lookupSymbol(n.varName)
 		switch varSymbol.typ.(type) {
 		case TypeInt, TypeFloat:
 		default:
 			tc.error(fmt.Sprintf("Cannot use ++ operator on non-numeric types"))
 		}
-	case DecNodeType:
-		varSymbol, _ := tc.scope.lookupSymbol(node.(*DecNode).varName)
+	case *DecNode:
+		varSymbol, _ := tc.scope.lookupSymbol(n.varName)
 		switch varSymbol.typ.(type) {
 		case TypeInt, TypeFloat:
 		default:
 			tc.error(fmt.Sprintf("Cannot use -- operator on non-numeric types"))
 		}
 
-	case StringLiteralNodeType, NumNodeType, BoolNodeType, VarNodeType, NoOpNodeType, UnaryOpNodeType, ContinueNodeType, BreakNodeType:
+	case *StringLiteralNode, *NumNode, *BoolNode, *VarNode, *NoOpNode, *UnaryOpNode, *ContinueNode, *BreakNode:
 		return
 
 	default:

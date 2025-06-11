@@ -213,13 +213,20 @@ func (g *Generator) codegenIndexedVar(node *IndexedVarNode, coercion Type) strin
 }
 
 func (g *Generator) codegenSliceLiteral(node *SliceLiteralNode, coercion Type) string {
-
 	elements := []string{}
 	for _, elem := range node.elements {
 		elements = append(elements, g.codegenExpr(elem, node.elementType))
 	}
-
 	return fmt.Sprintf("[]%s{%s}", g.codegenType(node.elementType), strings.Join(elements, ","))
+}
+
+func (g *Generator) codegenSetLiteral(node *SetLiteralNode, coercion Type) string {
+	elements := []string{}
+	for _, elem := range node.elements {
+		// TODO: If element is a literal, check that it's not a duplicate, or the go compiler will give error
+		elements = append(elements, fmt.Sprintf("%s: {}", g.codegenExpr(elem, node.elementType)))
+	}
+	return fmt.Sprintf("map[%s]struct{}{%s}", g.codegenType(node.elementType), strings.Join(elements, ","))
 }
 
 func (g *Generator) codegenUnaryOp(node *UnaryOpNode) string {
@@ -506,6 +513,30 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			return fmt.Sprintf("%s += %s", dest, g.codegenExpr(node.resolvedArgs["var"].expr, TypeString{}))
 		}
 
+	case "add":
+		destArg := node.resolvedArgs["dest"]
+		dest := g.codegenVar(destArg.expr.(*VarNode), NoCoercion{})
+		switch destArg.typ.(type) {
+		case TypeSet:
+			return fmt.Sprintf("%s[%s] = struct{}{}",
+				dest,
+				g.codegenExpr(
+					node.resolvedArgs["var"].expr,
+					destArg.typ.(IterableType).GetElementType(),
+				),
+			)
+		default:
+			panic("UNREACHABLE")
+		}
+
+	case "has":
+		g.addPreludeFunction("setContains")
+		haystack := node.resolvedArgs["haystack"]
+		return fmt.Sprintf("___setContains(%s, %s)",
+			g.codegenVar(haystack.expr.(*VarNode), NoCoercion{}),
+			g.codegenExpr(node.resolvedArgs["needle"].expr, haystack.typ.(IterableType).GetElementType()),
+		)
+
 	case "join":
 		g.addImport("strings")
 		listArg := node.resolvedArgs["list"]
@@ -773,6 +804,8 @@ func (g *Generator) codegenExpr(node Node, coercion Type) string {
 		return g.codegenFunctionCall(node.(*FunctionCallNode), coercion)
 	case SliceLiteralNodeType:
 		return g.codegenSliceLiteral(node.(*SliceLiteralNode), coercion)
+	case SetLiteralNodeType:
+		return g.codegenSetLiteral(node.(*SetLiteralNode), coercion)
 	case RangeNodeType:
 		g.addPreludeFunction("createRange")
 		return fmt.Sprintf("___createRange(%s, %s)", g.codegenExpr(node.(*RangeNode).from, TypeInt{}), g.codegenExpr(node.(*RangeNode).to, TypeInt{}))

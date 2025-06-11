@@ -115,7 +115,13 @@ func ___slurpFile(path string) string {
     return string(b)
 }
 `
-
+	case "setContains":
+		return `
+func ___setContains[T comparable](haystack map[T]struct{}, needle T) bool {
+    _, found := haystack[needle]
+    return found
+}
+`
 	default:
 		panic("Unknown prelude")
 	}
@@ -127,7 +133,7 @@ func preludeImports(name string) []string {
 		return []string{"fmt", "strconv", "os"}
 	case "intToString":
 		return []string{"strconv"}
-	case "createRange":
+	case "createRange", "setContains":
 		return []string{}
 	case "joinIntSlice", "joinFloatSlice":
 		return []string{"strings", "strconv"}

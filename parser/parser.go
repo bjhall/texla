@@ -319,6 +319,12 @@ func (p *Parser) parsePrimary() (Node, error) {
 			return &BoolNode{token: p.consumeToken()}, nil
 		case "false":
 			return &BoolNode{token: p.consumeToken()}, nil
+		case "set":
+			set, err := p.parseSetLiteral()
+			if err != nil {
+				return &NoOpNode{}, err
+			}
+			return set, nil
 		default:
 			return &NoOpNode{}, p.parseError(fmt.Sprintf("invalid keyword in primary expression: %q", keyword), p.currentToken())
 		}
@@ -359,32 +365,38 @@ func (p *Parser) parsePrimary() (Node, error) {
 	}
 }
 
+func (p *Parser) parseSetLiteral() (Node, error) {
+	_, err := p.expectToken(Keyword) // set
+	if err != nil {
+		panic("UNREACHABLE")
+	}
+	_, err = p.expectToken(OpenParen)
+	elements, err := p.parseExprList(CloseParen)
+	if err != nil {
+		return &NoOpNode{}, err
+	}
+
+	if err != nil {
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("failed to parse Set literal, expected \"(\", got %q", p.currentToken().str), p.currentToken())
+	}
+
+	_, err = p.expectToken(CloseParen)
+	if err != nil {
+		return &NoOpNode{}, p.parseError(fmt.Sprintf("set literal was not closed, missing )"), p.currentToken())
+	}
+
+	return &SetLiteralNode{elements: elements}, nil // FIXME
+}
+
 func (p *Parser) parseSliceLiteral() (Node, error) {
 	_, err := p.expectToken(OpenBracket)
 	if err != nil {
 		return &NoOpNode{}, p.parseError(fmt.Sprintf("error parsing slice literal: %v", err), p.currentToken())
 	}
 
-	// TODO: Parsing a comma separated list of expression should probably be extracted to a function
-	var elements []Node
-	for {
-		expr, err := p.parseExpr()
-		if err != nil {
-			return &NoOpNode{}, err
-		}
-		elements = append(elements, expr)
-		if p.currentToken().kind == CloseBracket || p.currentToken().kind == Eof {
-			break
-		}
-		_, err = p.expectToken(Comma)
-		if err != nil {
-			return &NoOpNode{}, p.parseError(fmt.Sprintf("failed to parse expression list in slice literal, expected , or ]"), p.currentToken())
-		}
-
-		// Allow slice literal to end with comma
-		if p.currentToken().kind == CloseBracket || p.currentToken().kind == Eof {
-			break
-		}
+	elements, err := p.parseExprList(CloseBracket)
+	if err != nil {
+		return &NoOpNode{}, err
 	}
 
 	_, err = p.expectToken(CloseBracket)
@@ -394,6 +406,31 @@ func (p *Parser) parseSliceLiteral() (Node, error) {
 
 	return &SliceLiteralNode{elements: elements}, nil
 }
+
+func (p *Parser) parseExprList(finalToken TokenKind) ([]Node, error) {
+	var elements []Node
+	for {
+		expr, err := p.parseExpr()
+		if err != nil {
+			return elements, err
+		}
+		elements = append(elements, expr)
+		if p.currentToken().kind == finalToken || p.currentToken().kind == Eof {
+			break
+		}
+		_, err = p.expectToken(Comma)
+		if err != nil {
+			return elements, p.parseError(fmt.Sprintf("failed to parse expression list, expected , or %s", finalToken), p.currentToken())
+		}
+
+		// Allow slice literal to end with comma
+		if p.currentToken().kind == finalToken || p.currentToken().kind == Eof {
+			break
+		}
+	}
+	return elements, nil
+}
+
 
 func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType Type, fallible bool) (Node, error) {
 

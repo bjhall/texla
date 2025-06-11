@@ -23,6 +23,22 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "var", typ: TypeAny{}},
 		},
 	},
+	"add": {
+		name:       "add",
+		returnType: TypeVoid{},
+		parameters: []ParameterNode{
+			ParameterNode{name: "dest", typ: TypeSet{}},
+			ParameterNode{name: "var", typ: TypeAny{}},
+		},
+	},
+	"has": {
+		name:       "has",
+		returnType: TypeBool{},
+		parameters: []ParameterNode{
+			ParameterNode{name: "haystack", typ: TypeSet{}},
+			ParameterNode{name: "needle", typ: TypeAny{}},
+		},
+	},
 	"join": {
 		name:       "join",
 		returnType: TypeString{},

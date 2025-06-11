@@ -5,7 +5,7 @@ fn double(a int) -> int {
 }
 
 fn main() {
-   a = [10, 20, 30.5]
+   a = [10, 20, 30.5,]
    print(a)
 
    b = [5+5, double(10), 30.5]

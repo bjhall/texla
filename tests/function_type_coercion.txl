@@ -6,7 +6,7 @@
 /// OUT = 17
 /// OUT = 17.799999999999997
 
-fn add(a int, b int) {
+fn addi(a int, b int) {
    print(a+b)
 }
 
@@ -17,12 +17,12 @@ fn addf(a float, b float) {
 fn main() {
 
    // Literal float to int coercion
-   add(3.3, 6+1)
+   addi(3.3, 6+1)
 
    // Float variables to int
    apa = 3.9
    b = 4.1
-   add(apa, b)
+   addi(apa, b)
 
    // Literal int to float coercion
    addf(1, 1)
@@ -33,12 +33,12 @@ fn main() {
    addf(i, j)
 
    // String literals to int
-   add("7", "9")
+   addi("7", "9")
 
    // String variables to int
    k = "8"
    l = "9"
-   add(k, l)
+   addi(k, l)
 
    // String variables to float
    m = "9.1"
