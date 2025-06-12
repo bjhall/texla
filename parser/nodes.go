@@ -7,7 +7,6 @@ import (
 
 type Node interface {
 	Print(level int)
-	Type() NodeType
 	Precedence() int
 	Token() Token
 }
@@ -31,10 +30,6 @@ func (n *NoOpNode) Print(level int) {
 	fmt.Println(indentation + "NoOp")
 }
 
-func (n *NoOpNode) Type() NodeType {
-	return NoOpNodeType
-}
-
 func (n *NoOpNode) Precedence() int {
 	return 0
 }
@@ -52,10 +47,6 @@ type NumNode struct {
 func (n *NumNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation + n.token.str)
-}
-
-func (n *NumNode) Type() NodeType {
-	return NumNodeType
 }
 
 func (n *NumNode) Precedence() int {
@@ -85,10 +76,6 @@ func (n *BoolNode) Print(level int) {
 	fmt.Println(indentation + n.token.str)
 }
 
-func (n *BoolNode) Type() NodeType {
-	return BoolNodeType
-}
-
 func (n *BoolNode) Precedence() int {
 	return 0
 }
@@ -104,10 +91,6 @@ func (n *StringLiteralNode) Print(level int) {
 	fmt.Println(indentation + "\"" + n.token.str + "\"")
 }
 
-func (n *StringLiteralNode) Type() NodeType {
-	return StringLiteralNodeType
-}
-
 func (n *StringLiteralNode) Precedence() int {
 	return 0
 }
@@ -121,10 +104,6 @@ type VarNode struct {
 func (n *VarNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation + "Variable: " + n.token.str)
-}
-
-func (n *VarNode) Type() NodeType {
-	return VarNodeType
 }
 
 func (n *VarNode) Precedence() int {
@@ -145,10 +124,6 @@ func (n *IndexedVarNode) Print(level int) {
 	n.index.Print(level + 1)
 }
 
-func (n *IndexedVarNode) Type() NodeType {
-	return IndexedVarNodeType
-}
-
 func (n *IndexedVarNode) Precedence() int {
 	return 0
 }
@@ -166,10 +141,6 @@ func (n *BinOpNode) Print(level int) {
 	fmt.Println(indentation+"BinOp", n.token.str)
 	n.left.Print(level + 1)
 	n.right.Print(level + 1)
-}
-
-func (n *BinOpNode) Type() NodeType {
-	return BinOpNodeType
 }
 
 func (n *BinOpNode) Precedence() int {
@@ -203,10 +174,6 @@ func (n *UnaryOpNode) Print(level int) {
 	n.expr.Print(level + 1)
 }
 
-func (n *UnaryOpNode) Type() NodeType {
-	return UnaryOpNodeType
-}
-
 func (n *UnaryOpNode) Precedence() int {
 	switch n.token.kind {
 	case Not:
@@ -238,10 +205,6 @@ func (n *AssignNode) Print(level int) {
 	n.right.Print(level + 1)
 }
 
-func (n *AssignNode) Type() NodeType {
-	return AssignNodeType
-}
-
 func (n *AssignNode) Precedence() int {
 	return 6
 }
@@ -262,10 +225,6 @@ func (n *CompoundStatementNode) Print(level int) {
 	for _, child := range n.children {
 		child.Print(level + 1)
 	}
-}
-
-func (n *CompoundStatementNode) Type() NodeType {
-	return CompoundStatementNodeType
 }
 
 func (n *CompoundStatementNode) Precedence() int {
@@ -293,10 +252,6 @@ func (n *FunctionNode) Print(level int) {
 	n.body.Print(level + 1)
 }
 
-func (n *FunctionNode) Type() NodeType {
-	return FunctionNodeType
-}
-
 func (n *FunctionNode) Precedence() int {
 	return 0
 }
@@ -316,10 +271,6 @@ func (n *ArgumentNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation+"Argument", "named:", n.named, "paramName:", n.paramName, "order:", n.order, "type:", n.typ)
 	n.expr.Print(level + 1)
-}
-
-func (n *ArgumentNode) Type() NodeType {
-	return ArgumentNodeType
 }
 
 func (n *ArgumentNode) Precedence() int {
@@ -371,10 +322,6 @@ func (n *FunctionCallNode) Print(level int) {
 		fmt.Println(indentation + "Error block:")
 		n.errorBody.Print(level + 1)
 	}
-}
-
-func (n *FunctionCallNode) Type() NodeType {
-	return FunctionCallNodeType
 }
 
 func (n *FunctionCallNode) Precedence() int {
@@ -435,10 +382,6 @@ func (n *ProgramNode) Print(level int) {
 	}
 }
 
-func (n *ProgramNode) Type() NodeType {
-	return ProgramNodeType
-}
-
 func (n *ProgramNode) Precedence() int {
 	return 10
 }
@@ -464,10 +407,6 @@ type ParameterNode struct {
 func (n *ParameterNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation+"Parameter", n.name, n.typ, "HasDefault:", n.hasDefault, "Default value:", n.defaultValue)
-}
-
-func (n *ParameterNode) Type() NodeType {
-	return ParameterNodeType
 }
 
 func (n *ParameterNode) Precedence() int {
@@ -504,10 +443,6 @@ func (n *ParameterListNode) Print(level int) {
 	}
 }
 
-func (n *ParameterListNode) Type() NodeType {
-	return ParameterListNodeType
-}
-
 func (n *ParameterListNode) Precedence() int {
 	return 10
 }
@@ -531,10 +466,6 @@ func (n *ReturnNode) setType(typ Type) {
 	n.typ = typ
 }
 
-func (n *ReturnNode) Type() NodeType {
-	return ReturnNodeType
-}
-
 func (n *ReturnNode) Precedence() int {
 	return 100
 }
@@ -550,10 +481,6 @@ func (n *ContinueNode) Print(level int) {
 	fmt.Println(indentation + "Continue")
 }
 
-func (n *ContinueNode) Type() NodeType {
-	return ContinueNodeType
-}
-
 func (n *ContinueNode) Precedence() int {
 	return 100
 }
@@ -567,10 +494,6 @@ type BreakNode struct {
 func (n *BreakNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation + "Break")
-}
-
-func (n *BreakNode) Type() NodeType {
-	return BreakNodeType
 }
 
 func (n *BreakNode) Precedence() int {
@@ -596,10 +519,6 @@ func (n *FailNode) setType(typ Type) {
 	n.typ = typ
 }
 
-func (n *FailNode) Type() NodeType {
-	return FailNodeType
-}
-
 func (n *FailNode) Precedence() int {
 	return 100
 }
@@ -619,7 +538,8 @@ func (n *IfNode) Print(level int) {
 	fmt.Println(indentation + "If")
 	n.comp.Print(level + 1)
 	n.body.Print(level + 1)
-	if n.elseBody.Type() != NoOpNodeType {
+	_, noElse := n.elseBody.(*NoOpNode)
+	if noElse {
 		fmt.Println(indentation + "Else")
 		n.elseBody.Print(level + 1)
 	}
@@ -627,10 +547,6 @@ func (n *IfNode) Print(level int) {
 
 func (n *IfNode) setCompType(typ Type) {
 	n.compType = typ
-}
-
-func (n *IfNode) Type() NodeType {
-	return IfNodeType
 }
 
 func (n *IfNode) Precedence() int {
@@ -662,10 +578,6 @@ func (n *ForeachNode) Print(level int) {
 	n.body.Print(level + 1)
 }
 
-func (n *ForeachNode) Type() NodeType {
-	return ForeachNodeType
-}
-
 func (n *ForeachNode) Precedence() int {
 	return 1000
 }
@@ -685,10 +597,6 @@ func (n *SliceLiteralNode) Print(level int) {
 		fmt.Println(indentation+"    "+"Element", i)
 		e.Print(level + 1)
 	}
-}
-
-func (n *SliceLiteralNode) Type() NodeType {
-	return SliceLiteralNodeType
 }
 
 func (n *SliceLiteralNode) Precedence() int {
@@ -712,10 +620,6 @@ func (n *SetLiteralNode) Print(level int) {
 	}
 }
 
-func (n *SetLiteralNode) Type() NodeType {
-	return SetLiteralNodeType
-}
-
 func (n *SetLiteralNode) Precedence() int {
 	return 1000
 }
@@ -730,10 +634,6 @@ type IncNode struct {
 func (n *IncNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation+"Increment:", n.varName)
-}
-
-func (n *IncNode) Type() NodeType {
-	return IncNodeType
 }
 
 func (n *IncNode) Precedence() int {
@@ -751,10 +651,6 @@ type DecNode struct {
 func (n *DecNode) Print(level int) {
 	indentation := strings.Repeat(" ", level*4)
 	fmt.Println(indentation+"Decrement:", n.varName)
-}
-
-func (n *DecNode) Type() NodeType {
-	return DecNodeType
 }
 
 func (n *DecNode) Precedence() int {
@@ -777,10 +673,6 @@ func (n *RangeNode) Print(level int) {
 	n.from.Print(level + 1)
 	fmt.Println(indentation + "    " + "To:")
 	n.to.Print(level + 1)
-}
-
-func (n *RangeNode) Type() NodeType {
-	return RangeNodeType
 }
 
 func (n *RangeNode) Precedence() int {

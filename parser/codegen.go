@@ -181,11 +181,11 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 }
 
 func (g *Generator) codegenIndexing(node Node) string {
-	switch node.Type() {
-	case RangeNodeType:
+	switch n :=  node.(type) {
+	case *RangeNode:
 		return fmt.Sprintf("%s:%s",
-			g.codegenExpr(node.(*RangeNode).from, TypeInt{}),
-			g.codegenExpr(node.(*RangeNode).to, TypeInt{}),
+			g.codegenExpr(n.from, TypeInt{}),
+			g.codegenExpr(n.to, TypeInt{}),
 		)
 	default:
 		return fmt.Sprintf("%s", g.codegenExpr(node, TypeInt{}))
@@ -252,10 +252,9 @@ func (g *Generator) codegenWithParens(node Node, parent Node, coercion Type) str
 	// 2. The child's precedence is lower than the parent's
 	needsParens := false
 
-	if node.Type() == BinOpNodeType && parent.Type() == BinOpNodeType {
-		childOp := node.(*BinOpNode)
-		parentOp := parent.(*BinOpNode)
-
+	childOp, childIsBinOp := node.(*BinOpNode)
+	parentOp, parentIsBinOp := parent.(*BinOpNode)
+	if childIsBinOp && parentIsBinOp {
 		// Add parens if child precedence is lower
 		if childOp.Precedence() < parentOp.Precedence() {
 			needsParens = true
@@ -264,7 +263,7 @@ func (g *Generator) codegenWithParens(node Node, parent Node, coercion Type) str
 		// Special case: For right-associative operators or
 		// when precedences are equal but on the right side
 		if childOp.Precedence() == parentOp.Precedence() {
-			if parent.(*BinOpNode).right == node {
+			if parentOp.right == node {
 				needsParens = true
 			}
 		}
@@ -686,16 +685,17 @@ func (g *Generator) codegenFail(node *FailNode) string {
 
 func (g *Generator) codegenIf(node *IfNode) string {
 	coerceType := node.compType
-	if node.comp.Type() == VarNodeType || node.comp.Type() == AssignNodeType {
+	switch node.comp.(type) {
+	case *VarNode, *AssignNode:
 		coerceType = TypeBool{}
 	}
 
 	var elseCode string
-	switch node.elseBody.Type() {
-	case CompoundStatementNodeType:
-		elseCode = " else " + g.codegenCompoundStatement(node.elseBody.(*CompoundStatementNode))
-	case IfNodeType:
-		elseCode = " else " + g.codegenIf(node.elseBody.(*IfNode))
+	switch elseBody := node.elseBody.(type) {
+	case *CompoundStatementNode:
+		elseCode = " else " + g.codegenCompoundStatement(elseBody)
+	case *IfNode:
+		elseCode = " else " + g.codegenIf(elseBody)
 	}
 
 	comparison := g.codegenExpr(node.comp, coerceType)
@@ -718,17 +718,18 @@ func (g *Generator) codegenIf(node *IfNode) string {
 func (g *Generator) codegenForeach(node *ForeachNode) string {
 
 	// Foreach loop with range: `for 1..10 -> x`
-	if node.iterator.Type() == RangeNodeType {
-		r := node.iterator.(*RangeNode)
+	switch n := node.iterator.(type) {
+	case *RangeNode:
 		return fmt.Sprintf("for %s := %s; %s <= %s; %s++ %s",
 			node.variable.token.str,
-			g.codegenExpr(r.from, TypeInt{}),
+			g.codegenExpr(n.from, TypeInt{}),
 			node.variable.token.str,
-			g.codegenExpr(r.to, TypeInt{}),
+			g.codegenExpr(n.to, TypeInt{}),
 			node.variable.token.str,
 			g.codegenCompoundStatement(node.body.(*CompoundStatementNode)),
 		)
-	} else { // Foreach loop with iterator: `for list -> x`
+	default:
+		// Foreach loop with iterator: `for list -> x`
 		idxVarName := "_"
 		if node.hasIdx {
 			idxVarName = node.idxVariable.token.str
@@ -751,68 +752,68 @@ func (g *Generator) codegenDec(node *DecNode) string {
 }
 
 func (g *Generator) codegenStatement(node Node) string {
-	switch node.Type() {
-	case AssignNodeType:
-		return g.codegenAssign(node.(*AssignNode))
-	case CompoundStatementNodeType:
-		return g.codegenCompoundStatement(node.(*CompoundStatementNode))
-	case FunctionNodeType:
-		return g.codegenFunction(node.(*FunctionNode))
-	case FunctionCallNodeType:
-		return g.codegenFunctionCall(node.(*FunctionCallNode), NoCoercion{})
-	case ReturnNodeType:
-		return g.codegenReturn(node.(*ReturnNode))
-	case FailNodeType:
-		return g.codegenFail(node.(*FailNode))
-	case IfNodeType:
-		return g.codegenIf(node.(*IfNode))
-	case ForeachNodeType:
-		return g.codegenForeach(node.(*ForeachNode))
-	case ContinueNodeType:
+	switch n := node.(type) {
+	case *AssignNode:
+		return g.codegenAssign(n)
+	case *CompoundStatementNode:
+		return g.codegenCompoundStatement(n)
+	case *FunctionNode:
+		return g.codegenFunction(n)
+	case *FunctionCallNode:
+		return g.codegenFunctionCall(n, NoCoercion{})
+	case *ReturnNode:
+		return g.codegenReturn(n)
+	case *FailNode:
+		return g.codegenFail(n)
+	case *IfNode:
+		return g.codegenIf(n)
+	case *ForeachNode:
+		return g.codegenForeach(n)
+	case *ContinueNode:
 		return "continue"
-	case BreakNodeType:
+	case *BreakNode:
 		return "break"
-	case IncNodeType:
-		return g.codegenInc(node.(*IncNode))
-	case DecNodeType:
-		return g.codegenDec(node.(*DecNode))
+	case *IncNode:
+		return g.codegenInc(n)
+	case *DecNode:
+		return g.codegenDec(n)
 	default:
-		fmt.Println("CODEGEN TODO: Unknown node in statement", node.Type())
+		fmt.Printf("CODEGEN TODO: Unknown node in statement: %T\n", node)
 		panic("")
 	}
 }
 
 func (g *Generator) codegenExpr(node Node, coercion Type) string {
-	switch node.Type() {
-	case NoOpNodeType:
+	switch n := node.(type) {
+	case *NoOpNode:
 		return ""
-	case UnaryOpNodeType:
-		return g.codegenUnaryOp(node.(*UnaryOpNode))
-	case BinOpNodeType:
-		return g.codegenBinOp(node.(*BinOpNode), coercion)
-	case NumNodeType:
-		return g.codegenNum(node.(*NumNode), coercion)
-	case BoolNodeType:
-		return g.codegenBool(node.(*BoolNode))
-	case StringLiteralNodeType:
-		return g.codegenStringLiteral(node.(*StringLiteralNode), coercion)
-	case VarNodeType:
-		return g.codegenVar(node.(*VarNode), coercion)
-	case IndexedVarNodeType:
-		return g.codegenIndexedVar(node.(*IndexedVarNode), coercion) //.(TypeSlice).ElementType)
-	case FunctionCallNodeType:
-		return g.codegenFunctionCall(node.(*FunctionCallNode), coercion)
-	case SliceLiteralNodeType:
-		return g.codegenSliceLiteral(node.(*SliceLiteralNode), coercion)
-	case SetLiteralNodeType:
-		return g.codegenSetLiteral(node.(*SetLiteralNode), coercion)
-	case RangeNodeType:
+	case *UnaryOpNode:
+		return g.codegenUnaryOp(n)
+	case *BinOpNode:
+		return g.codegenBinOp(n, coercion)
+	case *NumNode:
+		return g.codegenNum(n, coercion)
+	case *BoolNode:
+		return g.codegenBool(n)
+	case *StringLiteralNode:
+		return g.codegenStringLiteral(n, coercion)
+	case *VarNode:
+		return g.codegenVar(n, coercion)
+	case *IndexedVarNode:
+		return g.codegenIndexedVar(n, coercion)
+	case *FunctionCallNode:
+		return g.codegenFunctionCall(n, coercion)
+	case *SliceLiteralNode:
+		return g.codegenSliceLiteral(n, coercion)
+	case *SetLiteralNode:
+		return g.codegenSetLiteral(n, coercion)
+	case *RangeNode:
 		g.addPreludeFunction("createRange")
-		return fmt.Sprintf("___createRange(%s, %s)", g.codegenExpr(node.(*RangeNode).from, TypeInt{}), g.codegenExpr(node.(*RangeNode).to, TypeInt{}))
-	case AssignNodeType:
-		return g.codegenAssignExpr(node.(*AssignNode), coercion)
+		return fmt.Sprintf("___createRange(%s, %s)", g.codegenExpr(n.from, TypeInt{}), g.codegenExpr(n.to, TypeInt{}))
+	case *AssignNode:
+		return g.codegenAssignExpr(n, coercion)
 	default:
-		fmt.Println("CODEGEN TODO: Unknown node in expression", node.Type())
+		fmt.Printf("CODEGEN TODO: Unknown node in expression: %T\n", node)
 		panic("")
 	}
 }

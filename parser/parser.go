@@ -846,8 +846,8 @@ func (p *Parser) parseIterator() (Node, error) {
 		return rangeNode, nil
 
 	default:
-		switch firstExpr.Type() {
-		case VarNodeType, SliceLiteralNodeType:
+		switch firstExpr.(type) {
+		case *VarNode, *SliceLiteralNode:
 			return firstExpr, nil
 		default:
 			panic("Non-supported iterator...")

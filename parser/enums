@@ -37,36 +37,6 @@ LogicOr
 NoToken
 Eof
 
--NodeType int
-NoOpNodeType
-NumNodeType
-BoolNodeType
-StringLiteralNodeType
-BinOpNodeType
-UnaryOpNodeType
-CompoundStatementNodeType
-StatementNodeType
-AssignNodeType
-VarNodeType
-FunctionNodeType
-FunctionCallNodeType
-ProgramNodeType
-ParameterNodeType
-ParameterListNodeType
-ReturnNodeType
-IfNodeType
-SliceLiteralNodeType
-SetLiteralNodeType
-ArgumentNodeType
-IndexedVarNodeType
-ForeachNodeType
-RangeNodeType
-FailNodeType
-ContinueNodeType
-BreakNodeType
-IncNodeType
-DecNodeType
-
 -CoercionMode int
 CoercionModeDefault
 CoercionModeNumLiteral

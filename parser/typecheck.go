@@ -204,7 +204,7 @@ func (tc *TypeChecker) typecheckExpr(node Node) Type {
 		return tc.typecheckExpr(n.right)
 
 	default:
-		fmt.Println("TODO: Typechecking not implemented for", node.Type())
+		fmt.Printf("TODO: Typechecking not implemented for: %T\n")
 		os.Exit(1)
 	}
 	return TypeUndetermined{}
@@ -349,14 +349,14 @@ func (tc *TypeChecker) traverse(node Node) {
 	case *ForeachNode:
 		var controlVarType Type
 
-		switch n.iterator.Type() {
-		case RangeNodeType:
+		switch n.iterator.(type) {
+		case *RangeNode:
 			controlVarType = TypeInt{}
 		default:
 			iterType := tc.typecheckExpr(n.iterator)
 			controlVarType = iterType.(IterableType).GetElementType()
 		}
-		node.(*ForeachNode).body.(*CompoundStatementNode).SetVarType(n.variable.token.str, controlVarType)
+		n.body.(*CompoundStatementNode).SetVarType(n.variable.token.str, controlVarType)
 		tc.traverse(n.body)
 
 	case *IncNode:
@@ -378,7 +378,7 @@ func (tc *TypeChecker) traverse(node Node) {
 		return
 
 	default:
-		fmt.Println("TYPECHECKING TODO:", node.Type())
+		fmt.Printf("TYPECHECKING TODO: %T\n", node)
 		os.Exit(1)
 
 	}
