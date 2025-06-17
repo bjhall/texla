@@ -536,6 +536,13 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			g.codegenExpr(node.resolvedArgs["needle"].expr, haystack.typ.(IterableType).GetElementType()),
 		)
 
+	case "del":
+		set := node.resolvedArgs["set"]
+		return fmt.Sprintf("delete(%s, %s)",
+			g.codegenVar(set.expr.(*VarNode), NoCoercion{}),
+			g.codegenExpr(node.resolvedArgs["value"].expr, set.typ.(IterableType).GetElementType()),
+		)
+
 	case "join":
 		g.addImport("strings")
 		listArg := node.resolvedArgs["list"]

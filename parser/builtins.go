@@ -39,6 +39,14 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "needle", typ: TypeAny{}},
 		},
 	},
+	"del": {
+		name:       "del",
+		returnType: TypeBool{},
+		parameters: []ParameterNode{
+			ParameterNode{name: "set", typ: TypeSet{}},
+			ParameterNode{name: "value", typ: TypeAny{}},
+		},
+	},
 	"join": {
 		name:       "join",
 		returnType: TypeString{},

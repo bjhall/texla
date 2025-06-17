@@ -58,6 +58,13 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 		}
 		node.(*FunctionCallNode).setArgType("haystack", containerType)
 
+	case "del":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["set"].expr)
+		if !isSettable(containerType) {
+			tc.error(fmt.Sprintf("del() can only be used on sets, not %q", containerType))
+		}
+		node.(*FunctionCallNode).setArgType("set", containerType)
+
 	case "len":
 		containerType := tc.typecheckExpr(fnNode.resolvedArgs["var"].expr)
 		if !isAppendable(containerType) {
