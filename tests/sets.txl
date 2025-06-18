@@ -1,8 +1,10 @@
-/// OUT = map[Bonnie:{} Clyde:{} Johnny:{}]
+/// OUT = map[Bonnie:{} Bruce:{} Clyde:{} Fred:{} Johnny:{}]
 /// OUT = Clyde is in the set
 
 fn main() {
-   names = set("Bonnie", "Clyde", "Fred")
+   names1 = set("Bonnie", "Fred")
+   names2 = set("Clyde", "Bruce")
+   names = union(names1, names2)
    names.add("Johnny")
    names.add("Clyde")
    print(names)

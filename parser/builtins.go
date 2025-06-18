@@ -47,6 +47,14 @@ var builtins = map[string]BuiltinFunc{
 			ParameterNode{name: "value", typ: TypeAny{}},
 		},
 	},
+	"union": {
+		name:       "union",
+		returnType: TypeSet{ElementType: TypeUndetermined{}},
+		parameters: []ParameterNode{
+			ParameterNode{name: "set1", typ: TypeSet{}},
+			ParameterNode{name: "set2", typ: TypeSet{}},
+		},
+	},
 	"join": {
 		name:       "join",
 		returnType: TypeString{},

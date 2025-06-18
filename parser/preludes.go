@@ -122,6 +122,19 @@ func ___setContains[T comparable](haystack map[T]struct{}, needle T) bool {
     return found
 }
 `
+	case "setUnion":
+		return `
+func ___setUnion[T comparable](set1 map[T]struct{}, set2 map[T]struct{}) map[T]struct{} {
+    union := map[T]struct{}{}
+    for v := range set1 {
+        union[v] = struct{}{}
+    }
+    for v := range set2 {
+        union[v] = struct{}{}
+    }
+    return union
+}
+`
 	default:
 		panic("Unknown prelude")
 	}
@@ -133,7 +146,7 @@ func preludeImports(name string) []string {
 		return []string{"fmt", "strconv", "os"}
 	case "intToString":
 		return []string{"strconv"}
-	case "createRange", "setContains":
+	case "createRange", "setContains", "setUnion":
 		return []string{}
 	case "joinIntSlice", "joinFloatSlice":
 		return []string{"strings", "strconv"}

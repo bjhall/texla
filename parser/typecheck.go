@@ -65,6 +65,23 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 		}
 		node.(*FunctionCallNode).setArgType("set", containerType)
 
+	case "union":
+		set1Type := tc.typecheckExpr(fnNode.resolvedArgs["set1"].expr)
+		set2Type := tc.typecheckExpr(fnNode.resolvedArgs["set2"].expr)
+		if !isSettable(set1Type) {
+			tc.error(fmt.Sprintf("union() can only be used on sets, not %q", set1Type))
+		}
+		if !isSettable(set2Type) {
+			tc.error(fmt.Sprintf("union() can only be used on sets, not %q", set2Type))
+		}
+		if set1Type.(TypeSet).ElementType != set2Type.(TypeSet).ElementType {
+			tc.error(fmt.Sprintf("union() can only be used on sets with the same element type"))
+		}
+		//fmt.Println(set1Type.(TypeSet).ElementType, set2Type.(TypeSet).ElementType)
+		node.(*FunctionCallNode).setArgType("set1", set1Type)
+		node.(*FunctionCallNode).setArgType("set2", set1Type)
+		returnType = set1Type
+
 	case "len":
 		containerType := tc.typecheckExpr(fnNode.resolvedArgs["var"].expr)
 		if !isAppendable(containerType) {

@@ -84,7 +84,7 @@ func isSettable(t Type) bool {
 
 func isGeneric(t Type) bool {
 	switch t.(type) {
-	case TypeInt, TypeFloat, TypeString, TypeBool, TypeUndetermined, TypeVoid, NoCoercion, NoReturn, TypeSlice, TypeGenerator:
+	case TypeInt, TypeFloat, TypeString, TypeBool, TypeUndetermined, TypeVoid, NoCoercion, NoReturn, TypeSlice, TypeGenerator, TypeSet:
 		return false
 	default:
 		return true

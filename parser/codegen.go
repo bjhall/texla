@@ -543,6 +543,15 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			g.codegenExpr(node.resolvedArgs["value"].expr, set.typ.(IterableType).GetElementType()),
 		)
 
+	case "union":
+		g.addPreludeFunction("setUnion")
+		set1 := node.resolvedArgs["set1"]
+		set2 := node.resolvedArgs["set2"]
+		return fmt.Sprintf("___setUnion(%s, %s)",
+			g.codegenVar(set1.expr.(*VarNode), NoCoercion{}),
+			g.codegenVar(set2.expr.(*VarNode), NoCoercion{}),
+		)
+
 	case "join":
 		g.addImport("strings")
 		listArg := node.resolvedArgs["list"]
