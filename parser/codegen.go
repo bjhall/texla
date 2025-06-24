@@ -67,10 +67,6 @@ func (g *Generator) addPostStatement(node string) {
 	g.postStatements = append(g.postStatements, node)
 }
 
-func (g *Generator) error(errorStr string) {
-	g.errors = append(g.errors, fmt.Sprintf("CODEGEN ERROR: %s", errorStr))
-}
-
 func (g *Generator) indent(str string) string {
 	var indentation string
 	for _ = range g.indentLevel {
@@ -79,7 +75,11 @@ func (g *Generator) indent(str string) string {
 	return indentation + str
 }
 
-func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode) string {
+func (g *Generator) codegenError(text string, node Node) {
+	g.errors = append(g.errors, fmt.Sprintf("%s:%d:%d: %s", "filename", node.Token().line+1, node.Token().column, text)) // FIXME: Get filename into here somehow and make line and cols work
+}
+
+func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode, node Node) string {
 	if from == to || to.String() == "NoCoercion" {
 		return content
 	}
@@ -94,6 +94,9 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			return fmt.Sprintf("strconv.Itoa(%s)", content)
 		case TypeBool:
 			return fmt.Sprintf("%s != 0", content)
+		case TypeSlice:
+			g.codegenError("Slice expected, but int was provided", node)
+			return ""
 		default:
 			panic("Unimplemented coercion")
 		}
@@ -111,6 +114,9 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			return fmt.Sprintf("strconv.FormatFloat(%s, 'f', -1, 64)", content)
 		case TypeBool:
 			return fmt.Sprintf("%s != 0", content)
+		case TypeSlice:
+			g.codegenError("Slice expected, but int was provided", node)
+			return ""
 		default:
 			panic("Unimplemented coercion")
 		}
@@ -124,6 +130,9 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 			return fmt.Sprintf("stringToFloat(%s)", content)
 		case TypeBool:
 			return fmt.Sprintf("len(%s) > 0", content)
+		case TypeSlice:
+			g.codegenError("Slice expected, but int was provided", node)
+			return ""
 		default:
 			panic("Unimplemented coercion")
 		}
@@ -142,7 +151,7 @@ func (g *Generator) coerce(content string, from Type, to Type, mode CoercionMode
 }
 
 func (g *Generator) codegenNum(node *NumNode, coercion Type) string {
-	return g.coerce(node.token.str, node.NumType(), coercion, CoercionModeNumLiteral)
+	return g.coerce(node.token.str, node.NumType(), coercion, CoercionModeNumLiteral, node)
 }
 
 func (g *Generator) codegenBool(node *BoolNode) string {
@@ -151,7 +160,7 @@ func (g *Generator) codegenBool(node *BoolNode) string {
 }
 
 func (g *Generator) codegenStringLiteral(node *StringLiteralNode, coercion Type) string {
-	return g.coerce("\""+node.token.str+"\"", TypeString{}, coercion, CoercionModeDefault)
+	return g.coerce("\""+node.token.str+"\"", TypeString{}, coercion, CoercionModeDefault, node)
 }
 
 func literalToStr(value string, typ Type) string {
@@ -177,7 +186,7 @@ func (g *Generator) codegenVar(node *VarNode, coercion Type) string {
 		panic("Should be variable...") // TODO: ASSERT
 	}
 
-	return g.coerce(varName, symbol.typ, coercion, CoercionModeDefault)
+	return g.coerce(varName, symbol.typ, coercion, CoercionModeDefault, node)
 }
 
 func (g *Generator) codegenIndexing(node Node) string {
@@ -204,9 +213,9 @@ func (g *Generator) codegenIndexedVar(node *IndexedVarNode, coercion Type) strin
 
 	switch t := symbol.typ.(type) {
 	case TypeSlice:
-		return g.coerce(indexedVar, t.ElementType, coercion, CoercionModeDefault)
+		return g.coerce(indexedVar, t.ElementType, coercion, CoercionModeDefault, node)
 	case TypeString:
-		return fmt.Sprintf("string(%s)", g.coerce(indexedVar, TypeString{}, coercion, CoercionModeDefault))
+		return fmt.Sprintf("string(%s)", g.coerce(indexedVar, TypeString{}, coercion, CoercionModeDefault, node))
 	default:
 		panic("Non-indxable type")
 	}
@@ -366,7 +375,7 @@ func (g *Generator) codegenCompoundStatement(node *CompoundStatementNode) string
 }
 
 func (g *Generator) codegenType(typ Type) string {
-	switch typ.(type) {
+	switch t := typ.(type) {
 	case TypeInt:
 		return "int"
 	case TypeFloat:
@@ -375,6 +384,8 @@ func (g *Generator) codegenType(typ Type) string {
 		return "string"
 	case TypeBool:
 		return "bool"
+	case TypeSlice:
+		return "[]"+g.codegenType(t.GetElementType())
 	case TypeVoid:
 		return ""
 	default:
@@ -450,7 +461,7 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 
 		// For call to non-fallible function, just return the call
 		if !symbol.fallible {
-			return g.coerce(functionCall, symbol.typ, coercion, CoercionModeDefault)
+			return g.coerce(functionCall, symbol.typ, coercion, CoercionModeDefault, node)
 		}
 
 
@@ -462,7 +473,7 @@ func (g *Generator) codegenFunctionCall(node *FunctionCallNode, coercion Type) s
 		if symbol.typ != (TypeVoid{}) {
 			replacementVar := g.getReplacementVarName(node.name)
 			lhsVars = []string{replacementVar, "err"}
-			replacementCode = g.coerce(replacementVar, symbol.typ, coercion, CoercionModeDefault)
+			replacementCode = g.coerce(replacementVar, symbol.typ, coercion, CoercionModeDefault, node)
 			if returnScope.returnType != (TypeVoid{}) {
 				onErrReturnVars = []string{g.nilValue(returnScope.returnType), "err"}
 			}
@@ -666,7 +677,7 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 	default:
 		panic("Unimplemented bulitin")
 	}
-	return g.coerce(callStr, builtin.returnType, coercion, CoercionModeDefault)
+	return g.coerce(callStr, builtin.returnType, coercion, CoercionModeDefault, node)
 }
 
 func (g *Generator) codegenReturn(node *ReturnNode) string {

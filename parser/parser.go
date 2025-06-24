@@ -461,22 +461,36 @@ func (p *Parser) parseCompoundStatement(parameters []ParameterNode, returnType T
 }
 
 func (p *Parser) parseType() (Type, error) {
+	isSlice := false
+	if p.currentToken().kind == OpenBracket && p.peek(1).kind == CloseBracket {
+		p.consumeToken() // [
+		p.consumeToken() // ]
+		isSlice = true
+	}
+
 	typeToken, err := p.expectToken(Identifier)
 	if err != nil {
 		return TypeUndetermined{}, err
 	}
+
+	var baseType Type
 	switch typeToken.str {
 	case "int":
-		return TypeInt{}, nil
+		baseType = TypeInt{}
 	case "float":
-		return TypeFloat{}, nil
+		baseType = TypeFloat{}
 	case "str":
-		return TypeString{}, nil
+		baseType = TypeString{}
 	case "bool":
-		return TypeBool{}, nil
+		baseType = TypeBool{}
 	default:
 		return TypeUndetermined{}, p.parseError(fmt.Sprintf("expected type, got: %q", typeToken.str), p.currentToken())
 	}
+
+	if isSlice {
+		return TypeSlice{ElementType: baseType}, nil
+	}
+	return baseType, nil
 }
 
 func literalTokenType(token Token) (Type, error) {
