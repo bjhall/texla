@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"strings"
 	"flag"
 	"fmt"
 	"github.com/bjhall/texla/parser"
@@ -70,7 +71,10 @@ func main() {
 
 	if DEBUG {
 		fmt.Println("GENERATED CODE:")
-		fmt.Println(transpiledCode)
+		lines := strings.Split(transpiledCode, "\n")
+		for i := 0; i < len(lines); i++ {
+			fmt.Printf("%d: %s\n", i+1, lines[i])
+		}
 	}
 
 	// Write go code to a file
