@@ -82,6 +82,13 @@ func (tc *TypeChecker) typecheckBuiltin(node Node) Type {
 		node.(*FunctionCallNode).setArgType("set2", set1Type)
 		returnType = set1Type
 
+	case "to_set":
+		containerType := tc.typecheckExpr(fnNode.resolvedArgs["slice"].expr)
+		if _, isSlice := containerType.(TypeSlice); !isSlice {
+			tc.error(fmt.Sprintf("to_setn() can only be used on slices", containerType))
+		}
+		returnType = TypeSet{ElementType: containerType.(TypeSlice).ElementType}
+
 	case "len":
 		containerType := tc.typecheckExpr(fnNode.resolvedArgs["var"].expr)
 		if !isAppendable(containerType) {

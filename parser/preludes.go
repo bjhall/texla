@@ -135,6 +135,17 @@ func ___setUnion[T comparable](set1 map[T]struct{}, set2 map[T]struct{}) map[T]s
     return union
 }
 `
+
+	case "sliceToSet":
+		return `
+func ___sliceToSet[T comparable](s []T) map[T]struct{} {
+    out := map[T]struct{}{}
+    for _, e := range s {
+        out[e] = struct{}{}
+    }
+    return out
+}
+`
 	default:
 		panic("Unknown prelude")
 	}
@@ -146,7 +157,7 @@ func preludeImports(name string) []string {
 		return []string{"fmt", "strconv", "os"}
 	case "intToString":
 		return []string{"strconv"}
-	case "createRange", "setContains", "setUnion":
+	case "createRange", "setContains", "setUnion", "sliceToSet":
 		return []string{}
 	case "joinIntSlice", "joinFloatSlice":
 		return []string{"strings", "strconv"}

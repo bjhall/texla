@@ -554,6 +554,10 @@ func (g *Generator) codegenBuiltinCall(node *FunctionCallNode, coercion Type) st
 			g.codegenExpr(node.resolvedArgs["value"].expr, set.typ.(IterableType).GetElementType()),
 		)
 
+	case "to_set":
+		g.addPreludeFunction("sliceToSet")
+		return fmt.Sprintf("___sliceToSet(%s)", g.codegenExpr(node.resolvedArgs["slice"].expr, NoCoercion{}))
+
 	case "union":
 		g.addPreludeFunction("setUnion")
 		set1 := node.resolvedArgs["set1"]
